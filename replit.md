@@ -114,6 +114,9 @@ The app is configured to deploy on Vercel with serverless functions for the API.
 - `api/user/products.ts`: Get user's purchased products
 - `api/hotmart/webhook.ts`: Hotmart webhook handler
 - `api/admin/add-purchase.ts`: Manual purchase (admin)
+- `api/analytics/dashboard.ts`: Analytics dashboard data (admin only)
+- `api/analytics/track.ts`: Track single analytics event
+- `api/analytics/track-batch.ts`: Track multiple analytics events
 
 **Environment Variables (Vercel Dashboard):**
 - `SUPABASE_URL`: Supabase project URL
