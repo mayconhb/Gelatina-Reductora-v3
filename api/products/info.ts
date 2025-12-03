@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getAllProductsInfo } from '../lib/productMapping';
+import { getAllProductsInfo } from '../_lib/productMapping';
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {

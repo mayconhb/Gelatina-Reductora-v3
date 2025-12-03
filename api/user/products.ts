@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getUserPurchases } from '../lib/supabase';
-import { getAllAppProductIds } from '../lib/productMapping';
+import { getUserPurchases } from '../_lib/supabase';
+import { getAllAppProductIds } from '../_lib/productMapping';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {

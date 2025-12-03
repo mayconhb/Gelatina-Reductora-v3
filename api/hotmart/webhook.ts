@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { addPurchase, updatePurchaseStatus, getSupabaseClient } from '../lib/supabase';
-import { getAppProductId } from '../lib/productMapping';
+import { addPurchase, updatePurchaseStatus, getSupabaseClient } from '../_lib/supabase';
+import { getAppProductId } from '../_lib/productMapping';
 
 function verifyHotmartToken(token: string): boolean {
   const HOTMART_WEBHOOK_TOKEN = process.env.HOTMART_WEBHOOK_SECRET || '';
