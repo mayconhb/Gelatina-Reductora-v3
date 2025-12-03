@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "lib": ["ES2020"],
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": false,
+    "noEmit": true,
+    "isolatedModules": true
+  },
+  "include": [
+    "./**/*.ts",
+    "../shared/**/*.ts"
+  ]
+}

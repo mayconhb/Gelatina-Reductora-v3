@@ -1,4 +1,4 @@
-import { getProductInfo } from '../../../shared/products';
+import { getProductInfo } from '../../_shared/products';
 
 export default function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
