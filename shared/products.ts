@@ -27,14 +27,14 @@ export const PRODUCT_MAPPINGS: ProductMapping[] = [
   {
     name: "Acelerador 14 Días",
     appProductId: "l1",
-    hotmartProductId: "6694071",
-    offerCode: "8pqi3d4c"
+    hotmartProductId: "",
+    offerCode: ""
   },
   {
     name: "Quema-Grasa Mientras Duermes",
     appProductId: "l2",
-    hotmartProductId: "6694071",
-    offerCode: "8pqi3d4c"
+    hotmartProductId: "",
+    offerCode: ""
   },
   {
     name: "Reset Hormonal",
