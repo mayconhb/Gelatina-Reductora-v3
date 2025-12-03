@@ -33,7 +33,7 @@ interface DashboardData {
   product_views: ProductView[];
 }
 
-const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:3001';
+const API_BASE = '';
 
 const EVENT_LABELS: Record<string, string> = {
   'app_open': 'Aberturas do App',

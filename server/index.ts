@@ -467,6 +467,7 @@ const ADMIN_EMAIL = 'maycon.henriquebezerra@gmail.com';
 
 function verifyAdminAccess(req: express.Request): boolean {
   const adminEmail = req.headers['x-admin-email'] as string;
+  console.log('Admin access check - received email:', adminEmail, 'expected:', ADMIN_EMAIL);
   return !!(adminEmail && adminEmail.toLowerCase().trim() === ADMIN_EMAIL);
 }
 
