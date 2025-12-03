@@ -30,41 +30,52 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const event = req.body;
+    const body = req.body;
     
-    if (!event || !event.event_name) {
-      return res.status(400).json({ error: 'event_name is required' });
+    // Handle both single event and batch events
+    const events = body.events ? body.events : [body];
+    
+    if (!Array.isArray(events) || events.length === 0) {
+      return res.status(400).json({ error: 'No events provided' });
     }
 
-    if (!VALID_EVENT_NAMES.includes(event.event_name)) {
-      return res.status(400).json({ error: 'Invalid event_name' });
+    if (events.length > 50) {
+      return res.status(400).json({ error: 'Too many events (max 50)' });
+    }
+
+    const validEvents = events.filter((e: any) => e.event_name && VALID_EVENT_NAMES.includes(e.event_name));
+    
+    if (validEvents.length === 0) {
+      return res.status(400).json({ error: 'No valid events provided' });
     }
 
     const supabase = getSupabaseClient();
     
     if (!supabase) {
-      return res.json({ message: 'Event received (demo mode)' });
+      return res.json({ message: `${validEvents.length} events received (demo mode)` });
     }
+
+    const formattedEvents = validEvents.map((event: any) => ({
+      user_email: event.user_email?.toLowerCase() || null,
+      event_name: event.event_name,
+      product_id: event.product_id || null,
+      properties: event.properties || {},
+      session_id: event.session_id || null,
+      device_type: event.device_type || null
+    }));
 
     const { error } = await supabase
       .from('analytics_events')
-      .insert({
-        user_email: event.user_email?.toLowerCase() || null,
-        event_name: event.event_name,
-        product_id: event.product_id || null,
-        properties: event.properties || {},
-        session_id: event.session_id || null,
-        device_type: event.device_type || null
-      });
+      .insert(formattedEvents);
 
     if (error) {
-      console.error('Error tracking event:', error);
-      return res.status(500).json({ error: 'Failed to track event' });
+      console.error('Error tracking events:', error);
+      return res.status(500).json({ error: 'Failed to track events' });
     }
 
-    res.json({ message: 'Event tracked' });
+    res.json({ message: `${validEvents.length} event(s) tracked` });
   } catch (error: any) {
-    console.error('Error tracking event:', error);
+    console.error('Error tracking events:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 }

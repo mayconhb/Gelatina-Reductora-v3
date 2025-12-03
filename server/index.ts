@@ -400,51 +400,20 @@ app.post('/api/analytics/track', async (req, res) => {
       return res.status(429).json({ error: 'Rate limit exceeded' });
     }
 
-    const { event_name, user_email, product_id, properties, session_id, device_type } = req.body;
+    const body = req.body;
     
-    if (!event_name || !VALID_EVENT_NAMES.includes(event_name)) {
-      return res.status(400).json({ error: 'Invalid event_name' });
-    }
-
-    const success = await trackEvent({
-      event_name,
-      user_email: user_email || null,
-      product_id: product_id || null,
-      properties: properties || {},
-      session_id: session_id || null,
-      device_type: device_type || null
-    });
+    // Handle both single event and batch events
+    const events = body.events ? body.events : [body];
     
-    if (success) {
-      res.json({ message: 'Event tracked' });
-    } else {
-      res.status(500).json({ error: 'Failed to track event' });
-    }
-  } catch (error) {
-    console.error('Error tracking event:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.post('/api/analytics/track-batch', async (req, res) => {
-  try {
-    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
-    
-    if (!checkRateLimit(clientIp)) {
-      return res.status(429).json({ error: 'Rate limit exceeded' });
-    }
-
-    const { events } = req.body;
-    
-    if (!events || !Array.isArray(events) || events.length === 0) {
-      return res.status(400).json({ error: 'events array is required' });
+    if (!Array.isArray(events) || events.length === 0) {
+      return res.status(400).json({ error: 'No events provided' });
     }
 
     if (events.length > 50) {
       return res.status(400).json({ error: 'Too many events (max 50)' });
     }
 
-    const validEvents = events.filter(e => e.event_name && VALID_EVENT_NAMES.includes(e.event_name));
+    const validEvents = events.filter((e: any) => e.event_name && VALID_EVENT_NAMES.includes(e.event_name));
     
     if (validEvents.length === 0) {
       return res.status(400).json({ error: 'No valid events provided' });
@@ -453,7 +422,7 @@ app.post('/api/analytics/track-batch', async (req, res) => {
     const success = await trackEvents(validEvents);
     
     if (success) {
-      res.json({ message: `${validEvents.length} events tracked` });
+      res.json({ message: `${validEvents.length} event(s) tracked` });
     } else {
       res.status(500).json({ error: 'Failed to track events' });
     }

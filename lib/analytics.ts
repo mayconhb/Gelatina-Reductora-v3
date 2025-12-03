@@ -1,6 +1,4 @@
-const API_BASE = import.meta.env.PROD 
-  ? '' 
-  : 'http://localhost:3001';
+const API_BASE = '';
 
 interface AnalyticsEvent {
   event_name: string;
@@ -43,7 +41,7 @@ async function flushEvents() {
   eventQueue = [];
 
   try {
-    const response = await fetch(`${API_BASE}/api/analytics/track-batch`, {
+    const response = await fetch(`${API_BASE}/api/analytics/track`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ events: eventsToSend })
