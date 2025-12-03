@@ -183,7 +183,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, userName, us
         Cerrar sesión
       </button>
 
-      <p className="text-center text-slate-400 text-xs mt-8">Versión 1.0.0</p>
+      <p className="text-center text-slate-400 text-xs mt-8">Versión 1.0.1</p>
     </div>
   );
 };
