@@ -91,6 +91,34 @@ Run the SQL in `database/schema.sql` in your Supabase SQL Editor to create the p
 - **Build Command**: `npm run build`
 
 ## Deployment
+
+### Vercel (Recommended)
+The app is configured to deploy on Vercel with serverless functions for the API.
+
+**Structure:**
+- Frontend: Built with Vite, served as static files
+- Backend: Serverless functions in `/api` folder
+
+**Serverless Functions:**
+- `api/health.ts`: Health check endpoint
+- `api/products/info.ts`: List all products
+- `api/products/[productId]/info.ts`: Get specific product info
+- `api/user/products.ts`: Get user's purchased products
+- `api/hotmart/webhook.ts`: Hotmart webhook handler
+- `api/admin/add-purchase.ts`: Manual purchase (admin)
+
+**Environment Variables (Vercel Dashboard):**
+- `SUPABASE_URL`: Supabase project URL
+- `SUPABASE_SERVICE_KEY`: Supabase service role key
+- `HOTMART_WEBHOOK_SECRET`: Hotmart webhook token
+- `ADMIN_API_KEY`: Admin API key (optional)
+
+**Hotmart Webhook URL:**
+```
+https://YOUR-DOMAIN.vercel.app/api/hotmart/webhook
+```
+
+### Replit
 - **Type**: Static site deployment
 - **Build Output**: `dist/` directory
 - **Build Command**: `npm run build`
@@ -101,6 +129,13 @@ Run the SQL in `database/schema.sql` in your Supabase SQL Editor to create the p
 - If API integration is added later, handle secrets server-side or use VITE_ prefixed public variables
 
 ## Recent Changes
+- 2025-12-03: Vercel Deployment with Serverless Functions
+  - Created `/api` folder with serverless functions for Vercel
+  - Webhook, user products, product info all work on Vercel
+  - Fixed folder structure (using `_lib/` prefix for utilities)
+  - Added `vercel.json` configuration
+  - Tested and confirmed working with Hotmart webhooks
+
 - 2025-12-03: Hotmart Checkout Popup Integration
   - Added Hotmart checkout popup that opens when clicking on locked products
   - Created `server/productIds.json` file for easy product configuration
