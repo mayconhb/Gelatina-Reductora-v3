@@ -136,7 +136,65 @@ https://YOUR-DOMAIN.vercel.app/api/hotmart/webhook
 - API key exposure risk removed from Vite config to prevent secrets in client bundle
 - If API integration is added later, handle secrets server-side or use VITE_ prefixed public variables
 
+## Analytics Dashboard
+
+### Overview
+Built-in analytics dashboard to track user engagement, product views, and feature usage.
+
+### Accessing the Dashboard
+1. Go to the Profile tab in the app
+2. Click "Panel de Analytics"
+3. Enter your admin key (same as ADMIN_API_KEY)
+4. View metrics and charts
+
+### Tracked Events
+- `app_open`: App opens/sessions
+- `login/logout`: User authentication
+- `product_view`: Product detail views
+- `checkout_click`: Clicks on "Comprar Ahora" button
+- `protocol_day_complete`: Protocol days marked complete
+- `weight_add/delete`: Weight tracker usage
+- `tab_change`: Navigation between tabs
+- `install_prompt`: PWA install prompts
+
+### Dashboard Metrics
+- Daily Active Users (DAU) chart
+- Total unique users
+- Most viewed products
+- Feature usage statistics
+- Checkout click conversion
+
+### Security
+- Dashboard read endpoints require `x-admin-key` header
+- Tracking endpoints have rate limiting (100 requests/minute per IP)
+- Only whitelisted event types are accepted
+- No authentication required for tracking (to capture all user activity)
+
+### Database Tables (Analytics)
+- `analytics_events`: Raw event log (append-only)
+- `daily_active_users`: DAU aggregation
+- `feature_usage_daily`: Feature usage by day
+- `product_views_daily`: Product views by day
+- `user_sessions`: User session tracking
+
+### API Endpoints
+- `POST /api/analytics/track`: Track single event
+- `POST /api/analytics/track-batch`: Track multiple events
+- `GET /api/analytics/dashboard`: Full dashboard data (admin only)
+- `GET /api/analytics/dau`: Daily active users (admin only)
+- `GET /api/analytics/features`: Feature usage (admin only)
+- `GET /api/analytics/products`: Product views (admin only)
+
 ## Recent Changes
+- 2025-12-03: Analytics Dashboard Implementation
+  - Created analytics database tables for event tracking
+  - Implemented event tracking in frontend with batching (10s intervals)
+  - Added tracking for logins, product views, checkout clicks, tab changes
+  - Built admin dashboard with charts and metrics
+  - Protected dashboard with ADMIN_API_KEY
+  - Added rate limiting to tracking endpoints (100 req/min)
+  - Only whitelisted event types are accepted for security
+
 - 2025-12-03: Cloud Database Migration for User Data
   - Migrated user profile data (name, avatar) from localStorage to Supabase
   - Migrated protocol progress (completed days) from localStorage to Supabase
