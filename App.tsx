@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { LoginView } from './components/LoginView';
 import { HomeView } from './components/HomeView';
 import { ProfileView } from './components/ProfileView';
-import { TabBar } from './components/TabBar';
 import { Product, ViewState, Tab } from './types';
 import { Download, Star, Share, MoreVertical, Plus, X, Smartphone, ShoppingCart } from 'lucide-react';
 
@@ -530,18 +529,21 @@ const App: React.FC = () => {
       </div>
 
       {/* Main Content Area (Scrollable) */}
-      <div className="flex-1 overflow-y-auto no-scrollbar relative z-10 pb-20">
+      <div className="flex-1 overflow-y-auto no-scrollbar relative z-10">
         {activeTab === 'home' && (
           <HomeView 
             onProductClick={(product) => { trackProductView(product.id, product.title); setSelectedProduct(product); }} 
             onShowUpgrade={(product) => { trackCheckoutClick(product.id, product.title); openUpgradeModal(product); }}
             userName={userName}
             userEmail={userEmail}
+            userAvatar={userAvatar}
+            onOpenProfile={() => { trackTabChange('profile'); setActiveTab('profile'); }}
           />
         )}
         {activeTab === 'profile' && (
           <ProfileView 
-            onLogout={handleLogout} 
+            onLogout={handleLogout}
+            onBack={() => { setActiveTab('home'); }}
             userName={userName} 
             userAvatar={userAvatar}
             userEmail={userEmail}
@@ -552,18 +554,15 @@ const App: React.FC = () => {
       </div>
 
       {/* Floating Install Button (Inside App) */}
-      {!isInstalled && !selectedProduct && (
+      {!isInstalled && !selectedProduct && activeTab === 'home' && (
         <button
           onClick={handleInstallApp}
-          className="absolute bottom-24 right-6 bg-emerald-600 text-white px-4 py-3 rounded-full shadow-xl z-30 flex items-center gap-2 animate-pulse font-bold text-sm hover:scale-105 active:scale-95 transition-all"
+          className="absolute bottom-6 right-6 bg-emerald-600 text-white px-4 py-3 rounded-full shadow-xl z-30 flex items-center gap-2 animate-pulse font-bold text-sm hover:scale-105 active:scale-95 transition-all"
         >
           <Download size={18} />
           Instalar App
         </button>
       )}
-
-      {/* Tab Navigation */}
-      <TabBar activeTab={activeTab} onTabChange={(tab) => { trackTabChange(tab); setActiveTab(tab); }} />
 
       {/* Detail Overlay */}
       {selectedProduct && (

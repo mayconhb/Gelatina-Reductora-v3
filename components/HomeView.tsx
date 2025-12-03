@@ -1,5 +1,5 @@
 import React, { useState, useRef, MouseEvent, useMemo } from 'react';
-import { Lock, ChevronRight, Loader2 } from 'lucide-react';
+import { Lock, ChevronRight, Loader2, User } from 'lucide-react';
 import { PRODUCTS, BONUSES, LOCKED_CONTENT, MOTIVATIONAL_QUOTES } from '../constants';
 import { Product } from '../types';
 import { useUserProducts } from '../lib/useUserProducts';
@@ -12,6 +12,8 @@ interface HomeViewProps {
   onShowUpgrade: (product: Product) => void;
   userName: string;
   userEmail: string;
+  userAvatar: string | null;
+  onOpenProfile: () => void;
 }
 
 // Custom Hook para lógica de arrastar (Drag to Scroll)
@@ -55,7 +57,7 @@ const useDraggableScroll = () => {
   };
 };
 
-export const HomeView: React.FC<HomeViewProps> = ({ onProductClick, onShowUpgrade, userName, userEmail }) => {
+export const HomeView: React.FC<HomeViewProps> = ({ onProductClick, onShowUpgrade, userName, userEmail, userAvatar, onOpenProfile }) => {
   const [activeBanner, setActiveBanner] = useState(0);
 
   const { purchasedProducts, isLoading } = useUserProducts(userEmail);
@@ -115,14 +117,28 @@ export const HomeView: React.FC<HomeViewProps> = ({ onProductClick, onShowUpgrad
 
   return (
     <>
-      <div className="pb-24 pt-8 space-y-8 animate-fade-in bg-transparent min-h-screen">
+      <div className="pb-8 pt-8 space-y-8 animate-fade-in bg-transparent min-h-screen">
         
-        {/* Header: Greeting & Motivation */}
-        <div className="px-6 space-y-1">
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Hola, {userName} <span className="text-2xl">👋</span></h1>
-          <p className="text-slate-500 text-sm font-medium leading-relaxed max-w-[90%]">
-            "{dailyQuote}"
-          </p>
+        {/* Header: Greeting & Profile Button */}
+        <div className="px-6 flex items-start justify-between">
+          <div className="space-y-1 flex-1">
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Hola, {userName} <span className="text-2xl">👋</span></h1>
+            <p className="text-slate-500 text-sm font-medium leading-relaxed max-w-[90%]">
+              "{dailyQuote}"
+            </p>
+          </div>
+          
+          {/* Profile Button */}
+          <button
+            onClick={onOpenProfile}
+            className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-lg bg-slate-200 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shrink-0"
+          >
+            {userAvatar ? (
+              <img src={userAvatar} alt="Perfil" className="w-full h-full object-cover" />
+            ) : (
+              <User size={24} className="text-slate-400" />
+            )}
+          </button>
         </div>
 
         {/* Banner Carousel */}

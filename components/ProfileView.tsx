@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, LogOut, Camera, Loader2, Pencil, Check, X, BarChart3 } from 'lucide-react';
+import { User, LogOut, Camera, Loader2, Pencil, Check, X, BarChart3, ArrowLeft } from 'lucide-react';
 
 const ADMIN_EMAIL = 'maycon.henriquebezerra@gmail.com';
 
 interface ProfileViewProps {
   onLogout: () => void;
+  onBack: () => void;
   userName: string;
   userAvatar: string | null;
   userEmail: string;
@@ -12,7 +13,7 @@ interface ProfileViewProps {
   onOpenAnalytics?: () => void;
 }
 
-export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, userName, userAvatar, userEmail, onUpdateProfile, onOpenAnalytics }) => {
+export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, onBack, userName, userAvatar, userEmail, onUpdateProfile, onOpenAnalytics }) => {
   const [isSavingPhoto, setIsSavingPhoto] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState(userName);
@@ -86,7 +87,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, userName, us
   };
 
   return (
-    <div className="pt-10 px-6 pb-24 animate-fade-in bg-transparent min-h-screen">
+    <div className="pt-6 px-6 pb-8 animate-fade-in bg-transparent min-h-screen">
+      
+      {/* Back Button */}
+      <button
+        onClick={onBack}
+        className="flex items-center gap-2 text-slate-600 hover:text-slate-900 active:scale-95 transition-all mb-6"
+      >
+        <ArrowLeft size={20} />
+        <span className="font-medium">Volver</span>
+      </button>
       
       {/* Header Profile */}
       <div className="flex flex-col items-center mb-10">
