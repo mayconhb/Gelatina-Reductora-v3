@@ -366,12 +366,44 @@ app.post('/api/admin/add-purchase', async (req, res) => {
 // ANALYTICS ENDPOINTS
 // =============================================
 
+const VALID_EVENT_NAMES = [
+  'app_open', 'login', 'logout', 'product_view', 'checkout_click',
+  'protocol_day_complete', 'weight_add', 'weight_delete', 'tab_change', 'install_prompt'
+];
+
+const trackingRateLimit: Record<string, { count: number; resetTime: number }> = {};
+const RATE_LIMIT_WINDOW = 60000;
+const RATE_LIMIT_MAX = 100;
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const record = trackingRateLimit[ip];
+  
+  if (!record || now > record.resetTime) {
+    trackingRateLimit[ip] = { count: 1, resetTime: now + RATE_LIMIT_WINDOW };
+    return true;
+  }
+  
+  if (record.count >= RATE_LIMIT_MAX) {
+    return false;
+  }
+  
+  record.count++;
+  return true;
+}
+
 app.post('/api/analytics/track', async (req, res) => {
   try {
+    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+    
+    if (!checkRateLimit(clientIp)) {
+      return res.status(429).json({ error: 'Rate limit exceeded' });
+    }
+
     const { event_name, user_email, product_id, properties, session_id, device_type } = req.body;
     
-    if (!event_name) {
-      return res.status(400).json({ error: 'event_name is required' });
+    if (!event_name || !VALID_EVENT_NAMES.includes(event_name)) {
+      return res.status(400).json({ error: 'Invalid event_name' });
     }
 
     const success = await trackEvent({
@@ -396,16 +428,32 @@ app.post('/api/analytics/track', async (req, res) => {
 
 app.post('/api/analytics/track-batch', async (req, res) => {
   try {
+    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+    
+    if (!checkRateLimit(clientIp)) {
+      return res.status(429).json({ error: 'Rate limit exceeded' });
+    }
+
     const { events } = req.body;
     
     if (!events || !Array.isArray(events) || events.length === 0) {
       return res.status(400).json({ error: 'events array is required' });
     }
 
-    const success = await trackEvents(events);
+    if (events.length > 50) {
+      return res.status(400).json({ error: 'Too many events (max 50)' });
+    }
+
+    const validEvents = events.filter(e => e.event_name && VALID_EVENT_NAMES.includes(e.event_name));
+    
+    if (validEvents.length === 0) {
+      return res.status(400).json({ error: 'No valid events provided' });
+    }
+
+    const success = await trackEvents(validEvents);
     
     if (success) {
-      res.json({ message: `${events.length} events tracked` });
+      res.json({ message: `${validEvents.length} events tracked` });
     } else {
       res.status(500).json({ error: 'Failed to track events' });
     }
