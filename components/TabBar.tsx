@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Home, User } from 'lucide-react';
 import { Tab } from '../types';
 
@@ -7,7 +7,7 @@ interface TabBarProps {
   onTabChange: (tab: Tab) => void;
 }
 
-export const TabBar: React.FC<TabBarProps> = ({ activeTab, onTabChange }) => {
+export const TabBar = memo<TabBarProps>(({ activeTab, onTabChange }) => {
   return (
     <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200 px-6 py-4 pb-safe flex justify-around items-center z-40">
       
@@ -29,4 +29,6 @@ export const TabBar: React.FC<TabBarProps> = ({ activeTab, onTabChange }) => {
 
     </div>
   );
-};
+});
+
+TabBar.displayName = 'TabBar';

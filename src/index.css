@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+body {
+  font-family: 'Inter', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  background-color: #f8fafc;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

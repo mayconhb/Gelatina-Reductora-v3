@@ -13,16 +13,21 @@
   "dependencies": {
     "@octokit/rest": "^22.0.1",
     "@supabase/supabase-js": "^2.86.0",
+    "@tailwindcss/postcss": "^4.1.17",
+    "@tailwindcss/vite": "^4.1.17",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@vercel/node": "^5.5.14",
+    "autoprefixer": "^10.4.22",
     "concurrently": "^9.2.1",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "express": "^5.2.1",
     "lucide-react": "^0.554.0",
+    "postcss": "^8.5.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "tailwindcss": "^4.1.17",
     "tsx": "^4.21.0"
   },
   "devDependencies": {

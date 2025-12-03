@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { LoginView } from './components/LoginView';
 import { HomeView } from './components/HomeView';
 import { ProfileView } from './components/ProfileView';
 import { TabBar } from './components/TabBar';
-import { ProductDetailView } from './components/ProductDetailView';
-import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { Product, ViewState, Tab } from './types';
 import { Download, Star, Share, MoreVertical, Plus, X, Smartphone, ShoppingCart } from 'lucide-react';
+
+const ProductDetailView = lazy(() => import('./components/ProductDetailView').then(m => ({ default: m.ProductDetailView })));
+const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard').then(m => ({ default: m.AnalyticsDashboard })));
 import { getUserProfile, saveUserProfile } from './lib/api';
 import { trackAppOpen, trackLogin, trackLogout, trackTabChange, trackProductView, trackCheckoutClick, trackInstallPrompt } from './lib/analytics';
 
@@ -566,11 +567,13 @@ const App: React.FC = () => {
 
       {/* Detail Overlay */}
       {selectedProduct && (
-        <ProductDetailView 
-          product={selectedProduct} 
-          onBack={closeProductDetail}
-          userEmail={userEmail}
-        />
+        <Suspense fallback={<div className="absolute inset-0 flex items-center justify-center bg-white z-50"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div></div>}>
+          <ProductDetailView 
+            product={selectedProduct} 
+            onBack={closeProductDetail}
+            userEmail={userEmail}
+          />
+        </Suspense>
       )}
 
       {/* Upgrade Modal - Global & Absolute to Container */}
@@ -651,12 +654,14 @@ const App: React.FC = () => {
 
       {/* Analytics Dashboard */}
       {showAnalytics && (
-        <div className="absolute inset-0 z-[80]">
-          <AnalyticsDashboard 
-            onBack={() => { setShowAnalytics(false); }}
-            userEmail={userEmail}
-          />
-        </div>
+        <Suspense fallback={<div className="absolute inset-0 flex items-center justify-center bg-white z-[80]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div></div>}>
+          <div className="absolute inset-0 z-[80]">
+            <AnalyticsDashboard 
+              onBack={() => { setShowAnalytics(false); }}
+              userEmail={userEmail}
+            />
+          </div>
+        </Suspense>
       )}
     </div>
   );

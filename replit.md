@@ -6,7 +6,7 @@ A mobile-first Progressive Web App built with React, TypeScript, and Vite. This 
 ## Project Information
 - **Framework**: React 19.2.0 with TypeScript
 - **Build Tool**: Vite 6.x
-- **Styling**: Tailwind CSS (CDN for development)
+- **Styling**: Tailwind CSS v4 (local PostCSS build)
 - **Icons**: Lucide React
 - **Backend**: Express.js on port 3001
 - **Database**: Supabase (PostgreSQL)
@@ -196,6 +196,14 @@ Built-in analytics dashboard to track user engagement, product views, and featur
 - `GET /api/analytics/products`: Product views (admin only)
 
 ## Recent Changes
+- 2025-12-03: Performance Optimizations
+  - Migrated Tailwind CSS from CDN to local build using @tailwindcss/vite plugin (v4)
+  - Added lazy loading for ProductDetailView and AnalyticsDashboard components with Suspense
+  - Added React.memo to TabBar component to prevent unnecessary re-renders
+  - Configured Vite build with code splitting (vendor-react, vendor-icons chunks)
+  - Added esbuild minification and CSS minification for production builds
+  - Created src/index.css with Tailwind v4 import syntax
+
 - 2025-12-03: Image Optimization (95% size reduction)
   - Converted 7 PNG images to WebP format
   - Total image size reduced from 6.1MB to 288KB
