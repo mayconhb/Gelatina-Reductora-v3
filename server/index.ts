@@ -28,6 +28,7 @@ app.use(cors());
 app.use(express.json());
 
 const HOTMART_WEBHOOK_TOKEN = process.env.HOTMART_WEBHOOK_SECRET || '';
+const ADMIN_EMAIL = 'maycon.henriquebezerra@gmail.com';
 
 function verifyHotmartToken(token: string): boolean {
   if (!HOTMART_WEBHOOK_TOKEN) {
@@ -54,9 +55,18 @@ app.get('/api/user/products', async (req, res) => {
       return res.status(400).json({ error: 'Email is required' });
     }
 
+    const allProductIds = getAllAppProductIds();
+    
+    if (email.toLowerCase().trim() === ADMIN_EMAIL) {
+      return res.json({
+        email: email.toLowerCase(),
+        purchasedProducts: allProductIds,
+        lockedProducts: []
+      });
+    }
+
     const purchases = await getUserPurchases(email);
     const purchasedProductIds = purchases.map(p => p.product_id);
-    const allProductIds = getAllAppProductIds();
     
     const lockedProductIds = allProductIds.filter(id => !purchasedProductIds.includes(id));
 
@@ -421,8 +431,6 @@ app.post('/api/analytics/track', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
-const ADMIN_EMAIL = 'maycon.henriquebezerra@gmail.com';
 
 function verifyAdminAccess(req: express.Request): boolean {
   const adminEmail = req.headers['x-admin-email'] as string;

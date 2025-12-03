@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { getAllAppProductIds } from '../../shared/products';
 
+const ADMIN_EMAIL = 'maycon.henriquebezerra@gmail.com';
+
 function getSupabaseClient() {
   const supabaseUrl = process.env.SUPABASE_URL || '';
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || '';
@@ -32,6 +34,16 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: 'Email is required' });
     }
 
+    const allProductIds = getAllAppProductIds();
+
+    if (email.toLowerCase().trim() === ADMIN_EMAIL) {
+      return res.json({
+        email: email.toLowerCase(),
+        purchasedProducts: allProductIds,
+        lockedProducts: []
+      });
+    }
+
     const supabase = getSupabaseClient();
     let purchasedProductIds: string[] = [];
 
@@ -45,7 +57,6 @@ export default async function handler(req: any, res: any) {
       purchasedProductIds = (data || []).map((p: any) => p.product_id);
     }
 
-    const allProductIds = getAllAppProductIds();
     const lockedProductIds = allProductIds.filter(id => !purchasedProductIds.includes(id));
 
     res.json({
