@@ -196,6 +196,13 @@ Built-in analytics dashboard to track user engagement, product views, and featur
 - `GET /api/analytics/products`: Product views (admin only)
 
 ## Recent Changes
+- 2025-12-03: Image Optimization (95% size reduction)
+  - Converted 7 PNG images to WebP format
+  - Total image size reduced from 6.1MB to 288KB
+  - Added `loading="lazy"` and `decoding="async"` to all product images and banners
+  - Significantly improves mobile load times and data usage
+  - WebP images stored alongside originals in attached_assets/
+
 - 2025-12-03: Product Data Centralization
   - Created `shared/products.ts` as single source of truth for all product data
   - Removed duplicated PRODUCT_MAPPINGS from multiple files
