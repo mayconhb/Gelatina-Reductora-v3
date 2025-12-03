@@ -108,27 +108,46 @@ const App: React.FC = () => {
       return;
     }
 
-    try {
-      const params = new URLSearchParams();
-      params.set('off', productOfferCode);
-      if (userEmail) {
-        params.set('email', userEmail);
+    const checkoutElements = (window as any).hotmartCheckoutElements || (window as any).checkoutElements;
+    
+    if (checkoutElements) {
+      try {
+        setShowUpgradeModal(false);
+        setUpgradeProduct(null);
+        
+        const checkout = checkoutElements.init('overlayCheckout', {
+          offer: productOfferCode,
+          email: userEmail || undefined,
+          name: userName || undefined
+        });
+        
+        checkout.open();
+        
+      } catch (error) {
+        console.error('Error opening Hotmart popup:', error);
+        openCheckoutFallback();
       }
-      if (userName) {
-        params.set('name', userName);
-      }
-      
-      const checkoutUrl = `https://pay.hotmart.com/${hotmartProductId}?${params.toString()}`;
-      
-      setShowUpgradeModal(false);
-      setUpgradeProduct(null);
-      
-      window.location.href = checkoutUrl;
-      
-    } catch (error) {
-      console.error('Error opening Hotmart checkout:', error);
-      setOfferCodeError('Error al abrir el checkout. Intenta nuevamente.');
+    } else {
+      openCheckoutFallback();
     }
+  };
+
+  const openCheckoutFallback = () => {
+    const params = new URLSearchParams();
+    params.set('off', productOfferCode);
+    if (userEmail) {
+      params.set('email', userEmail);
+    }
+    if (userName) {
+      params.set('name', userName);
+    }
+    
+    const checkoutUrl = `https://pay.hotmart.com/${hotmartProductId}?${params.toString()}`;
+    
+    setShowUpgradeModal(false);
+    setUpgradeProduct(null);
+    
+    window.location.href = checkoutUrl;
   };
 
   const closeInstallInstructions = () => {
