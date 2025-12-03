@@ -103,69 +103,31 @@ const App: React.FC = () => {
       return;
     }
 
-    const inIframe = isInsideIframe();
-    
-    if (inIframe) {
-      try {
-        if (!hotmartProductId) {
-          setOfferCodeError('Producto no configurado correctamente');
-          return;
-        }
-        
-        const params = new URLSearchParams();
-        params.set('off', productOfferCode);
-        if (userEmail) {
-          params.set('email', userEmail);
-        }
-        if (userName) {
-          params.set('name', userName);
-        }
-        
-        const checkoutUrl = `https://pay.hotmart.com/${hotmartProductId}?${params.toString()}`;
-        
-        setShowUpgradeModal(false);
-        setUpgradeProduct(null);
-        
-        window.open(checkoutUrl, '_blank');
-        
-      } catch (error) {
-        console.error('Error opening Hotmart checkout:', error);
-        setOfferCodeError('Error al abrir el checkout. Intenta nuevamente.');
+    if (!hotmartProductId) {
+      setOfferCodeError('Producto no configurado correctamente');
+      return;
+    }
+
+    try {
+      const params = new URLSearchParams();
+      params.set('off', productOfferCode);
+      if (userEmail) {
+        params.set('email', userEmail);
       }
-    } else {
-      if (!(window as any).checkoutElements) {
-        setOfferCodeError('Sistema de pagos no disponible. Recarga la página.');
-        return;
+      if (userName) {
+        params.set('name', userName);
       }
       
-      try {
-        setShowUpgradeModal(false);
-        setUpgradeProduct(null);
-        
-        const tempButton = document.createElement('button');
-        tempButton.id = 'hotmart-checkout-btn';
-        tempButton.style.display = 'none';
-        document.body.appendChild(tempButton);
-        
-        const elements = (window as any).checkoutElements.init('overlayCheckout', {
-          offer: productOfferCode,
-          prefilledInfo: {
-            email: userEmail,
-            name: userName
-          }
-        });
-        
-        elements.attach('#hotmart-checkout-btn');
-        tempButton.click();
-        
-        setTimeout(() => {
-          tempButton.remove();
-        }, 1000);
-        
-      } catch (error) {
-        console.error('Error opening Hotmart checkout:', error);
-        setOfferCodeError('Error al abrir el checkout. Intenta nuevamente.');
-      }
+      const checkoutUrl = `https://pay.hotmart.com/${hotmartProductId}?${params.toString()}`;
+      
+      setShowUpgradeModal(false);
+      setUpgradeProduct(null);
+      
+      window.location.href = checkoutUrl;
+      
+    } catch (error) {
+      console.error('Error opening Hotmart checkout:', error);
+      setOfferCodeError('Error al abrir el checkout. Intenta nuevamente.');
     }
   };
 
