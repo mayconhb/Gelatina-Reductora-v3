@@ -27,13 +27,55 @@ export const PRODUCT_MAPPINGS: ProductMapping[] = [
   {
     name: "Acelerador 14 Días",
     appProductId: "l1",
-    hotmartProductId: "HOTMART_PRODUCT_L1",
-    offerCode: ""
+    hotmartProductId: "6694071",
+    offerCode: "8pqi3d4c"
   },
   {
     name: "Quema-Grasa Mientras Duermes",
     appProductId: "l2",
-    hotmartProductId: "HOTMART_PRODUCT_L2",
+    hotmartProductId: "6694071",
+    offerCode: "8pqi3d4c"
+  },
+  {
+    name: "Reset Hormonal",
+    appProductId: "b1",
+    hotmartProductId: "",
+    offerCode: ""
+  },
+  {
+    name: "Detox 3 Días",
+    appProductId: "b2",
+    hotmartProductId: "",
+    offerCode: ""
+  },
+  {
+    name: "20 Tés Adelgazantes",
+    appProductId: "b3",
+    hotmartProductId: "",
+    offerCode: ""
+  },
+  {
+    name: "15 Jugos Detox",
+    appProductId: "b4",
+    hotmartProductId: "",
+    offerCode: ""
+  },
+  {
+    name: "10 Shots Turbo",
+    appProductId: "b5",
+    hotmartProductId: "",
+    offerCode: ""
+  },
+  {
+    name: "15 Postres Fit",
+    appProductId: "b6",
+    hotmartProductId: "",
+    offerCode: ""
+  },
+  {
+    name: "Plan Anticelulitis",
+    appProductId: "b7",
+    hotmartProductId: "",
     offerCode: ""
   }
 ];
