@@ -79,7 +79,15 @@ When a user clicks on a locked product, a modal appears with the product info an
 The webhook uses Hotmart's token-based authentication via the `x-hotmart-hottok` header. When you configure your webhook URL in Hotmart's dashboard, you'll set a token that Hotmart sends with each request. Store this same token as `HOTMART_WEBHOOK_SECRET` in Replit secrets.
 
 ### Database Setup
-Run the SQL in `database/schema.sql` in your Supabase SQL Editor to create the purchases table.
+Run the SQL in `database/schema.sql` in your Supabase SQL Editor to create all required tables:
+
+**Tables:**
+1. **purchases** - Stores Hotmart purchase records (product access)
+2. **user_profiles** - Stores user profile data (name, avatar)
+3. **protocol_progress** - Stores protocol completion progress (days completed)
+4. **weight_entries** - Stores weight tracking data for the tracker feature
+
+All user data is now stored in the cloud database, so users can access their data from any device.
 
 ## Development
 - **Frontend Port**: 5000 (Vite dev server)
@@ -129,6 +137,16 @@ https://YOUR-DOMAIN.vercel.app/api/hotmart/webhook
 - If API integration is added later, handle secrets server-side or use VITE_ prefixed public variables
 
 ## Recent Changes
+- 2025-12-03: Cloud Database Migration for User Data
+  - Migrated user profile data (name, avatar) from localStorage to Supabase
+  - Migrated protocol progress (completed days) from localStorage to Supabase
+  - Migrated weight tracker data from localStorage to Supabase
+  - Created new database tables: user_profiles, protocol_progress, weight_entries
+  - Added new API endpoints for profile, protocol progress, and weight entries
+  - Data now syncs across devices - users won't lose data if they change phones
+  - Fallback to localStorage if database is not configured
+  - Updated schema.sql with all new table definitions
+
 - 2025-12-03: Vercel Deployment with Serverless Functions
   - Created `/api` folder with serverless functions for Vercel
   - Webhook, user products, product info all work on Vercel

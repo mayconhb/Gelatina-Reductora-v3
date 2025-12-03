@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, PlayCircle, Clock, BookOpen, ChefHat, Check, AlertTriangle, Lightbulb, Info, Utensils, Flame, ChevronDown, ChevronUp, CheckCircle, Circle, Target, Plus, TrendingDown, Calendar, Trash2, TrendingUp, Minus, Star, Zap, Coffee } from 'lucide-react';
 import { Product, GuideBlock } from '../types';
+import { getProtocolProgress, saveProtocolProgress, getWeightEntries, addWeightEntry, deleteWeightEntry, WeightEntry as ApiWeightEntry } from '../lib/api';
 
 interface ProductDetailViewProps {
   product: Product;
   onBack: () => void;
+  userEmail: string;
 }
 
 interface WeightEntry {
@@ -101,7 +103,7 @@ const GuideBlockRenderer: React.FC<{ block: GuideBlock }> = ({ block }) => {
   }
 };
 
-export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product, onBack }) => {
+export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product, onBack, userEmail }) => {
   const isRecipe = !!product.recipeDetails;
   const isProtocol = !!product.protocolDetails;
   const isTracker = !!product.trackerDetails;
@@ -115,28 +117,52 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product, o
   const [weights, setWeights] = useState<WeightEntry[]>([]);
   const [newWeight, setNewWeight] = useState('');
 
-  // Load data from local storage on mount
   useEffect(() => {
-    if (isProtocol) {
-      const saved = localStorage.getItem(`protocol_completed_${product.id}`);
-      if (saved) {
-        setCompletedDays(JSON.parse(saved));
-      }
-    }
-    if (isTracker) {
-        const savedWeights = localStorage.getItem('weight_tracker_data');
-        if (savedWeights) {
-            setWeights(JSON.parse(savedWeights));
+    if (isProtocol && userEmail) {
+      getProtocolProgress(userEmail, product.id).then(days => {
+        if (days.length > 0) {
+          setCompletedDays(days);
+        } else {
+          const saved = localStorage.getItem(`protocol_completed_${product.id}`);
+          if (saved) {
+            const localDays = JSON.parse(saved);
+            setCompletedDays(localDays);
+            saveProtocolProgress(userEmail, product.id, localDays);
+          }
         }
+      });
     }
-  }, [product.id, isProtocol, isTracker]);
+    if (isTracker && userEmail) {
+      getWeightEntries(userEmail).then(async entries => {
+        if (entries.length > 0) {
+          const formattedEntries = entries.map(e => ({
+            id: e.id,
+            date: new Date(e.recorded_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
+            weight: e.weight
+          }));
+          setWeights(formattedEntries);
+          localStorage.removeItem('weight_tracker_data');
+        } else {
+          const savedWeights = localStorage.getItem('weight_tracker_data');
+          if (savedWeights) {
+            const localEntries = JSON.parse(savedWeights);
+            setWeights(localEntries);
+            for (const entry of localEntries) {
+              await addWeightEntry(userEmail, entry.weight);
+            }
+            localStorage.setItem('weight_tracker_migrated', 'true');
+          }
+        }
+      });
+    }
+  }, [product.id, isProtocol, isTracker, userEmail]);
 
   const toggleDay = (day: number) => {
     setExpandedDay(expandedDay === day ? null : day);
   };
 
   const toggleCompletion = (e: React.MouseEvent, day: number) => {
-    e.stopPropagation(); // Prevent toggling accordion
+    e.stopPropagation();
     let newCompleted;
     if (completedDays.includes(day)) {
       newCompleted = completedDays.filter(d => d !== day);
@@ -144,29 +170,53 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product, o
       newCompleted = [...completedDays, day];
     }
     setCompletedDays(newCompleted);
+    if (userEmail) {
+      saveProtocolProgress(userEmail, product.id, newCompleted);
+    }
     localStorage.setItem(`protocol_completed_${product.id}`, JSON.stringify(newCompleted));
   };
 
-  // Tracker Functions
-  const handleAddWeight = (e: React.FormEvent) => {
+  const handleAddWeight = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!newWeight) return;
       
-      const entry: WeightEntry = {
-          id: Date.now(),
-          date: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
-          weight: parseFloat(newWeight)
-      };
+      const weightValue = parseFloat(newWeight);
       
-      const updatedWeights = [...weights, entry];
+      if (userEmail) {
+        const entry = await addWeightEntry(userEmail, weightValue);
+        if (entry) {
+          const formattedEntry: WeightEntry = {
+            id: entry.id,
+            date: new Date(entry.recorded_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
+            weight: entry.weight
+          };
+          setWeights([...weights, formattedEntry]);
+          setNewWeight('');
+          return;
+        }
+      }
+      
+      const localEntry: WeightEntry = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
+        weight: weightValue
+      };
+      const updatedWeights = [...weights, localEntry];
       setWeights(updatedWeights);
       localStorage.setItem('weight_tracker_data', JSON.stringify(updatedWeights));
       setNewWeight('');
   };
 
-  const handleDeleteWeight = (id: number) => {
+  const handleDeleteWeight = async (id: number) => {
       const updatedWeights = weights.filter(w => w.id !== id);
       setWeights(updatedWeights);
+      
+      if (userEmail) {
+        const success = await deleteWeightEntry(userEmail, id);
+        if (success) {
+          return;
+        }
+      }
       localStorage.setItem('weight_tracker_data', JSON.stringify(updatedWeights));
   };
 

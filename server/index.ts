@@ -1,6 +1,17 @@
 import express from 'express';
 import cors from 'cors';
-import { getUserPurchases, addPurchase, updatePurchaseStatus } from './supabase';
+import { 
+  getUserPurchases, 
+  addPurchase, 
+  updatePurchaseStatus,
+  getUserProfile,
+  upsertUserProfile,
+  getProtocolProgress,
+  updateProtocolProgress,
+  getWeightEntries,
+  addWeightEntry,
+  deleteWeightEntry
+} from './supabase';
 import { getAppProductId, getAllAppProductIds, getAllProductsInfo, getProductInfo } from './productMapping';
 
 const app = express();
@@ -23,6 +34,10 @@ function verifyHotmartToken(token: string): boolean {
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// =============================================
+// USER PRODUCTS ENDPOINTS
+// =============================================
 
 app.get('/api/user/products', async (req, res) => {
   try {
@@ -48,6 +63,163 @@ app.get('/api/user/products', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// =============================================
+// USER PROFILE ENDPOINTS
+// =============================================
+
+app.get('/api/user/profile', async (req, res) => {
+  try {
+    const email = req.query.email as string;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const profile = await getUserProfile(email);
+    
+    if (profile) {
+      res.json({ profile });
+    } else {
+      res.json({ profile: null });
+    }
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/user/profile', async (req, res) => {
+  try {
+    const { email, name, avatar } = req.body;
+    
+    if (!email || !name) {
+      return res.status(400).json({ error: 'Email and name are required' });
+    }
+
+    const success = await upsertUserProfile({ email, name, avatar: avatar || null });
+    
+    if (success) {
+      res.json({ message: 'Profile saved successfully' });
+    } else {
+      res.status(500).json({ error: 'Failed to save profile' });
+    }
+  } catch (error) {
+    console.error('Error saving user profile:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// =============================================
+// PROTOCOL PROGRESS ENDPOINTS
+// =============================================
+
+app.get('/api/user/protocol-progress', async (req, res) => {
+  try {
+    const email = req.query.email as string;
+    const productId = req.query.productId as string;
+    
+    if (!email || !productId) {
+      return res.status(400).json({ error: 'Email and productId are required' });
+    }
+
+    const completedDays = await getProtocolProgress(email, productId);
+    
+    res.json({ completedDays });
+  } catch (error) {
+    console.error('Error fetching protocol progress:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/user/protocol-progress', async (req, res) => {
+  try {
+    const { email, productId, completedDays } = req.body;
+    
+    if (!email || !productId || !Array.isArray(completedDays)) {
+      return res.status(400).json({ error: 'Email, productId and completedDays array are required' });
+    }
+
+    const success = await updateProtocolProgress(email, productId, completedDays);
+    
+    if (success) {
+      res.json({ message: 'Progress saved successfully' });
+    } else {
+      res.status(500).json({ error: 'Failed to save progress' });
+    }
+  } catch (error) {
+    console.error('Error saving protocol progress:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// =============================================
+// WEIGHT ENTRIES ENDPOINTS
+// =============================================
+
+app.get('/api/user/weight-entries', async (req, res) => {
+  try {
+    const email = req.query.email as string;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const entries = await getWeightEntries(email);
+    
+    res.json({ entries });
+  } catch (error) {
+    console.error('Error fetching weight entries:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/user/weight-entries', async (req, res) => {
+  try {
+    const { email, weight } = req.body;
+    
+    if (!email || typeof weight !== 'number') {
+      return res.status(400).json({ error: 'Email and weight are required' });
+    }
+
+    const entry = await addWeightEntry(email, weight);
+    
+    if (entry) {
+      res.json({ entry });
+    } else {
+      res.status(500).json({ error: 'Failed to add weight entry' });
+    }
+  } catch (error) {
+    console.error('Error adding weight entry:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/user/weight-entries/:id', async (req, res) => {
+  try {
+    const email = req.query.email as string;
+    const entryId = parseInt(req.params.id);
+    
+    if (!email || isNaN(entryId)) {
+      return res.status(400).json({ error: 'Email and valid entry ID are required' });
+    }
+
+    const success = await deleteWeightEntry(email, entryId);
+    
+    if (success) {
+      res.json({ message: 'Entry deleted successfully' });
+    } else {
+      res.status(500).json({ error: 'Failed to delete entry' });
+    }
+  } catch (error) {
+    console.error('Error deleting weight entry:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// =============================================
+// HOTMART WEBHOOK
+// =============================================
 
 app.post('/api/hotmart/webhook', async (req, res) => {
   try {
@@ -114,7 +286,10 @@ app.post('/api/hotmart/webhook', async (req, res) => {
   }
 });
 
-// Endpoint para retornar informações dos produtos (incluindo offerCode para checkout)
+// =============================================
+// PRODUCTS INFO
+// =============================================
+
 app.get('/api/products/info', (req, res) => {
   try {
     const products = getAllProductsInfo();
@@ -140,6 +315,10 @@ app.get('/api/products/:productId/info', (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// =============================================
+// ADMIN ENDPOINTS
+// =============================================
 
 app.post('/api/admin/add-purchase', async (req, res) => {
   try {

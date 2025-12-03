@@ -6,6 +6,7 @@ import { TabBar } from './components/TabBar';
 import { ProductDetailView } from './components/ProductDetailView';
 import { Product, ViewState, Tab } from './types';
 import { Download, Star, Share, MoreVertical, Plus, X, Smartphone, ShoppingCart } from 'lucide-react';
+import { getUserProfile, saveUserProfile } from './lib/api';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -194,7 +195,6 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // Carrega dados do localStorage apenas no cliente (após hidratação)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const isLoggedIn = localStorage.getItem('user_logged_in') === 'true';
@@ -204,16 +204,23 @@ const App: React.FC = () => {
         setUserEmail(email);
         setViewState('main');
         
-        const userData = localStorage.getItem(`user_data_${email}`);
-        if (userData) {
-          try {
-            const parsed = JSON.parse(userData);
-            setUserName(parsed.name || '');
-            setUserAvatar(parsed.avatar || null);
-          } catch (e) {
-            console.error('Error parsing user data');
+        getUserProfile(email).then(profile => {
+          if (profile) {
+            setUserName(profile.name || '');
+            setUserAvatar(profile.avatar || null);
+          } else {
+            const userData = localStorage.getItem(`user_data_${email}`);
+            if (userData) {
+              try {
+                const parsed = JSON.parse(userData);
+                setUserName(parsed.name || '');
+                setUserAvatar(parsed.avatar || null);
+              } catch (e) {
+                console.error('Error parsing user data');
+              }
+            }
           }
-        }
+        });
       }
       setIsHydrated(true);
     }
@@ -297,34 +304,24 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const handleLogin = (name: string, email: string) => {
-    // Normaliza o email para minúsculas
+  const handleLogin = async (name: string, email: string) => {
     const normalizedEmail = email.toLowerCase().trim();
     
-    // Verifica se já existem dados salvos para este email
-    const existingData = localStorage.getItem(`user_data_${normalizedEmail}`);
-    
-    let finalName = name;
-    let finalAvatar: string | null = null;
-    
-    if (existingData) {
-      // Recupera dados existentes do usuário
-      const parsed = JSON.parse(existingData);
-      finalName = parsed.name || name;
-      finalAvatar = parsed.avatar || null;
-    } else {
-      // Primeiro login deste email, salva os dados iniciais
-      const userData = { name, avatar: null };
-      localStorage.setItem(`user_data_${normalizedEmail}`, JSON.stringify(userData));
-    }
-    
     setUserEmail(normalizedEmail);
-    setUserName(finalName);
-    setUserAvatar(finalAvatar);
     setViewState('main');
-    
     localStorage.setItem('current_user_email', normalizedEmail);
     localStorage.setItem('user_logged_in', 'true');
+    
+    const existingProfile = await getUserProfile(normalizedEmail);
+    
+    if (existingProfile) {
+      setUserName(existingProfile.name || name);
+      setUserAvatar(existingProfile.avatar || null);
+    } else {
+      setUserName(name);
+      setUserAvatar(null);
+      saveUserProfile({ email: normalizedEmail, name, avatar: null });
+    }
   };
 
   const handleLogout = () => {
@@ -343,12 +340,9 @@ const App: React.FC = () => {
     setUserName(newName);
     setUserAvatar(newAvatar);
     
-    // Salva os dados vinculados ao email do usuário atual
-    // Usa o estado ou busca diretamente do localStorage como fallback
     const emailToUse = userEmail || localStorage.getItem('current_user_email');
     if (emailToUse) {
-      const userData = { name: newName, avatar: newAvatar };
-      localStorage.setItem(`user_data_${emailToUse}`, JSON.stringify(userData));
+      saveUserProfile({ email: emailToUse, name: newName, avatar: newAvatar });
     }
   };
 
@@ -564,7 +558,8 @@ const App: React.FC = () => {
       {selectedProduct && (
         <ProductDetailView 
           product={selectedProduct} 
-          onBack={closeProductDetail} 
+          onBack={closeProductDetail}
+          userEmail={userEmail}
         />
       )}
 
