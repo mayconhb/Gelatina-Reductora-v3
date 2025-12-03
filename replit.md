@@ -24,7 +24,9 @@ A mobile-first Progressive Web App built with React, TypeScript, and Vite. This 
 - **Backend (server/)**:
   - `index.ts`: Express server with API routes
   - `supabase.ts`: Supabase client and database functions
-  - `productMapping.ts`: Hotmart product ID to app product ID mapping
+  - `productMapping.ts`: Re-exports product mapping from shared/
+- **Shared (shared/)**:
+  - `products.ts`: Single source of truth for product data and mapping functions
 - **API Client (lib/)**:
   - `api.ts`: Frontend API service
   - `useUserProducts.ts`: React hook for fetching user purchases
@@ -58,13 +60,17 @@ A mobile-first Progressive Web App built with React, TypeScript, and Vite. This 
 - `PURCHASE_CANCELED` / `PURCHASE_CHARGEBACK`: Removes product access
 
 ### Product Mapping
-Edit `server/productIds.json` to configure Hotmart product IDs and checkout offer codes:
+Edit `shared/products.ts` to configure Hotmart product IDs and checkout offer codes:
 - `p1`, `p2`, `p3`: Main products
 - `l1`, `l2`: Exclusive content products
 
 Each product needs:
 - `hotmartProductId`: The product ID from Hotmart (for webhook processing)
+- `appProductId`: Internal product identifier
+- `name`: Product display name
 - `offerCode`: The offer code for checkout popup (found in Hotmart pricing/offers section)
+
+This file is the single source of truth for product data, used by both local development (server/) and Vercel deployment (api/).
 
 ### Checkout Popup
 When a user clicks on a locked product, a modal appears with the product info and a "Comprar Ahora" button that opens the Hotmart checkout popup directly in the app. The checkout popup pre-fills the user's email for convenience.
@@ -190,6 +196,14 @@ Built-in analytics dashboard to track user engagement, product views, and featur
 - `GET /api/analytics/products`: Product views (admin only)
 
 ## Recent Changes
+- 2025-12-03: Product Data Centralization
+  - Created `shared/products.ts` as single source of truth for all product data
+  - Removed duplicated PRODUCT_MAPPINGS from multiple files
+  - server/productMapping.ts now re-exports from shared/products.ts
+  - All api/ serverless functions now import from shared/products.ts
+  - Removed deprecated server/productIds.json
+  - This makes it easier to add/edit products - only one file to change
+
 - 2025-12-03: Analytics Dashboard Access Simplification
   - Changed analytics access to email-based authentication
   - Admin email: maycon.henriquebezerra@gmail.com
