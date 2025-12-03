@@ -142,10 +142,10 @@ https://YOUR-DOMAIN.vercel.app/api/hotmart/webhook
 Built-in analytics dashboard to track user engagement, product views, and feature usage.
 
 ### Accessing the Dashboard
-1. Go to the Profile tab in the app
-2. Click "Panel de Analytics"
-3. Enter your admin key (same as ADMIN_API_KEY)
-4. View metrics and charts
+1. Log in with the admin email: maycon.henriquebezerra@gmail.com
+2. Go to the Profile tab in the app
+3. Click "Panel de Analytics" (only visible for admin)
+4. View metrics and charts (no password required)
 
 ### Tracked Events
 - `app_open`: App opens/sessions
@@ -165,7 +165,8 @@ Built-in analytics dashboard to track user engagement, product views, and featur
 - Checkout click conversion
 
 ### Security
-- Dashboard read endpoints require `x-admin-key` header
+- Dashboard access restricted to admin email (maycon.henriquebezerra@gmail.com)
+- Dashboard read endpoints verify admin email via `x-admin-email` header
 - Tracking endpoints have rate limiting (100 requests/minute per IP)
 - Only whitelisted event types are accepted
 - No authentication required for tracking (to capture all user activity)
@@ -186,6 +187,13 @@ Built-in analytics dashboard to track user engagement, product views, and featur
 - `GET /api/analytics/products`: Product views (admin only)
 
 ## Recent Changes
+- 2025-12-03: Analytics Dashboard Access Simplification
+  - Changed analytics access to email-based authentication
+  - Admin email: maycon.henriquebezerra@gmail.com
+  - Panel de Analytics button only visible when logged in as admin
+  - Removed password/admin key requirement for analytics
+  - Admin can now directly access analytics without entering a password
+
 - 2025-12-03: Analytics Dashboard Implementation
   - Created analytics database tables for event tracking
   - Implemented event tracking in frontend with batching (10s intervals)

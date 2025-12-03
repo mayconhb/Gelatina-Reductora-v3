@@ -463,10 +463,11 @@ app.post('/api/analytics/track-batch', async (req, res) => {
   }
 });
 
+const ADMIN_EMAIL = 'maycon.henriquebezerra@gmail.com';
+
 function verifyAdminAccess(req: express.Request): boolean {
-  const adminKey = req.headers['x-admin-key'] as string;
-  const expectedAdminKey = process.env.ADMIN_API_KEY;
-  return !!(expectedAdminKey && adminKey === expectedAdminKey);
+  const adminEmail = req.headers['x-admin-email'] as string;
+  return !!(adminEmail && adminEmail.toLowerCase().trim() === ADMIN_EMAIL);
 }
 
 app.get('/api/analytics/dashboard', async (req, res) => {

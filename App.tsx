@@ -28,7 +28,6 @@ const App: React.FC = () => {
   const [offerCodeError, setOfferCodeError] = useState<string>('');
   const [showInstallInstructions, setShowInstallInstructions] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
-  const [analyticsAdminKey, setAnalyticsAdminKey] = useState('');
   
   const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
   
@@ -544,8 +543,9 @@ const App: React.FC = () => {
             onLogout={handleLogout} 
             userName={userName} 
             userAvatar={userAvatar}
+            userEmail={userEmail}
             onUpdateProfile={handleUpdateProfile}
-            onOpenAnalytics={(key) => { setAnalyticsAdminKey(key); setShowAnalytics(true); }}
+            onOpenAnalytics={() => { setShowAnalytics(true); }}
           />
         )}
       </div>
@@ -653,8 +653,8 @@ const App: React.FC = () => {
       {showAnalytics && (
         <div className="absolute inset-0 z-[80]">
           <AnalyticsDashboard 
-            onBack={() => { setShowAnalytics(false); setAnalyticsAdminKey(''); }}
-            adminKey={analyticsAdminKey}
+            onBack={() => { setShowAnalytics(false); }}
+            userEmail={userEmail}
           />
         </div>
       )}

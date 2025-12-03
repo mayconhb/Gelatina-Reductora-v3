@@ -62,10 +62,10 @@ const PRODUCT_LABELS: Record<string, string> = {
 
 interface Props {
   onBack: () => void;
-  adminKey: string;
+  userEmail: string;
 }
 
-export const AnalyticsDashboard: React.FC<Props> = ({ onBack, adminKey }) => {
+export const AnalyticsDashboard: React.FC<Props> = ({ onBack, userEmail }) => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -78,13 +78,13 @@ export const AnalyticsDashboard: React.FC<Props> = ({ onBack, adminKey }) => {
     try {
       const response = await fetch(`${API_BASE}/api/analytics/dashboard?days=${days}`, {
         headers: {
-          'x-admin-key': adminKey
+          'x-admin-email': userEmail
         }
       });
 
       if (!response.ok) {
         if (response.status === 401) {
-          setError('Chave de administrador inválida');
+          setError('Acesso não autorizado');
         } else {
           setError('Erro ao carregar dados');
         }
@@ -102,7 +102,7 @@ export const AnalyticsDashboard: React.FC<Props> = ({ onBack, adminKey }) => {
 
   useEffect(() => {
     fetchData();
-  }, [days, adminKey]);
+  }, [days, userEmail]);
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('es-ES', { 
