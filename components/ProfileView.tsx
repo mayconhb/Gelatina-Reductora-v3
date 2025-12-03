@@ -1,16 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, LogOut, Camera, Loader2, Pencil, Check, X } from 'lucide-react';
+import { User, LogOut, Camera, Loader2, Pencil, Check, X, BarChart3, Key } from 'lucide-react';
 
 interface ProfileViewProps {
   onLogout: () => void;
   userName: string;
   userAvatar: string | null;
   onUpdateProfile: (name: string, avatar: string | null) => void;
+  onOpenAnalytics?: (adminKey: string) => void;
 }
 
-export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, userName, userAvatar, onUpdateProfile }) => {
+export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, userName, userAvatar, onUpdateProfile, onOpenAnalytics }) => {
   const [isSavingPhoto, setIsSavingPhoto] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
+  const [showAdminInput, setShowAdminInput] = useState(false);
+  const [adminKey, setAdminKey] = useState('');
   const [editName, setEditName] = useState(userName);
   const [isSavingName, setIsSavingName] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -154,6 +157,54 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, userName, us
         
         <p className="text-xs text-slate-400 mt-2">Toca la foto para cambiar</p>
       </div>
+
+      {/* Admin Analytics Access */}
+      {onOpenAnalytics && (
+        <div className="mb-4">
+          {!showAdminInput ? (
+            <button 
+              onClick={() => setShowAdminInput(true)}
+              className="w-full bg-slate-100 text-slate-600 font-medium py-4 rounded-xl border border-slate-200 active:bg-slate-200 transition-colors flex items-center justify-center gap-2"
+            >
+              <BarChart3 size={18} />
+              Panel de Analytics
+            </button>
+          ) : (
+            <div className="bg-white/70 backdrop-blur-sm rounded-xl border border-white/50 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Key size={16} className="text-slate-500" />
+                <span className="text-sm font-medium text-slate-700">Clave de Administrador</span>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  value={adminKey}
+                  onChange={(e) => setAdminKey(e.target.value)}
+                  placeholder="Ingresa la clave..."
+                  className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+                <button
+                  onClick={() => {
+                    if (adminKey.trim()) {
+                      onOpenAnalytics(adminKey.trim());
+                    }
+                  }}
+                  disabled={!adminKey.trim()}
+                  className="px-4 py-2 bg-emerald-500 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Entrar
+                </button>
+              </div>
+              <button
+                onClick={() => { setShowAdminInput(false); setAdminKey(''); }}
+                className="text-xs text-slate-400 mt-2"
+              >
+                Cancelar
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Logout */}
       <button 

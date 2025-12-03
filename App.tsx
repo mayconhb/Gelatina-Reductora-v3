@@ -4,9 +4,11 @@ import { HomeView } from './components/HomeView';
 import { ProfileView } from './components/ProfileView';
 import { TabBar } from './components/TabBar';
 import { ProductDetailView } from './components/ProductDetailView';
+import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { Product, ViewState, Tab } from './types';
 import { Download, Star, Share, MoreVertical, Plus, X, Smartphone, ShoppingCart } from 'lucide-react';
 import { getUserProfile, saveUserProfile } from './lib/api';
+import { trackAppOpen, trackLogin, trackLogout, trackTabChange, trackProductView, trackCheckoutClick, trackInstallPrompt } from './lib/analytics';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -25,6 +27,8 @@ const App: React.FC = () => {
   const [isLoadingOfferCode, setIsLoadingOfferCode] = useState(false);
   const [offerCodeError, setOfferCodeError] = useState<string>('');
   const [showInstallInstructions, setShowInstallInstructions] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analyticsAdminKey, setAnalyticsAdminKey] = useState('');
   
   const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
   
@@ -203,6 +207,7 @@ const App: React.FC = () => {
       if (isLoggedIn && email) {
         setUserEmail(email);
         setViewState('main');
+        trackAppOpen();
         
         getUserProfile(email).then(profile => {
           if (profile) {
@@ -312,6 +317,8 @@ const App: React.FC = () => {
     localStorage.setItem('current_user_email', normalizedEmail);
     localStorage.setItem('user_logged_in', 'true');
     
+    trackLogin(normalizedEmail);
+    
     const existingProfile = await getUserProfile(normalizedEmail);
     
     if (existingProfile) {
@@ -325,13 +332,13 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
+    trackLogout();
     setViewState('login');
     setActiveTab('home');
     setSelectedProduct(null);
     setUserName('');
     setUserAvatar(null);
     setUserEmail('');
-    // Mantém os dados do usuário salvos, apenas desloga
     localStorage.setItem('user_logged_in', 'false');
     localStorage.removeItem('current_user_email');
   };
@@ -347,10 +354,12 @@ const App: React.FC = () => {
   };
 
   const handleInstallApp = async () => {
+    trackInstallPrompt('shown');
     if (deferredPromptRef.current) {
       try {
         await deferredPromptRef.current.prompt();
         const { outcome } = await deferredPromptRef.current.userChoice;
+        trackInstallPrompt(outcome);
         if (outcome === 'accepted') {
           setShowInstallAlert(true);
           setTimeout(() => {
@@ -524,8 +533,8 @@ const App: React.FC = () => {
       <div className="flex-1 overflow-y-auto no-scrollbar relative z-10 pb-20">
         {activeTab === 'home' && (
           <HomeView 
-            onProductClick={setSelectedProduct} 
-            onShowUpgrade={openUpgradeModal}
+            onProductClick={(product) => { trackProductView(product.id, product.title); setSelectedProduct(product); }} 
+            onShowUpgrade={(product) => { trackCheckoutClick(product.id, product.title); openUpgradeModal(product); }}
             userName={userName}
             userEmail={userEmail}
           />
@@ -536,6 +545,7 @@ const App: React.FC = () => {
             userName={userName} 
             userAvatar={userAvatar}
             onUpdateProfile={handleUpdateProfile}
+            onOpenAnalytics={(key) => { setAnalyticsAdminKey(key); setShowAnalytics(true); }}
           />
         )}
       </div>
@@ -552,7 +562,7 @@ const App: React.FC = () => {
       )}
 
       {/* Tab Navigation */}
-      <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+      <TabBar activeTab={activeTab} onTabChange={(tab) => { trackTabChange(tab); setActiveTab(tab); }} />
 
       {/* Detail Overlay */}
       {selectedProduct && (
@@ -638,6 +648,16 @@ const App: React.FC = () => {
 
       {/* Install Instructions Modal */}
       {renderInstallInstructionsModal()}
+
+      {/* Analytics Dashboard */}
+      {showAnalytics && (
+        <div className="absolute inset-0 z-[80]">
+          <AnalyticsDashboard 
+            onBack={() => { setShowAnalytics(false); setAnalyticsAdminKey(''); }}
+            adminKey={analyticsAdminKey}
+          />
+        </div>
+      )}
     </div>
   );
 };

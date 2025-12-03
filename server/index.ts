@@ -10,7 +10,14 @@ import {
   updateProtocolProgress,
   getWeightEntries,
   addWeightEntry,
-  deleteWeightEntry
+  deleteWeightEntry,
+  trackEvent,
+  trackEvents,
+  getDailyActiveUsers,
+  getFeatureUsage,
+  getProductViews,
+  getAnalyticsSummary,
+  getRecentEvents
 } from './supabase';
 import { getAppProductId, getAllAppProductIds, getAllProductsInfo, getProductInfo } from './productMapping';
 
@@ -351,6 +358,167 @@ app.post('/api/admin/add-purchase', async (req, res) => {
     }
   } catch (error) {
     console.error('Error adding manual purchase:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// =============================================
+// ANALYTICS ENDPOINTS
+// =============================================
+
+app.post('/api/analytics/track', async (req, res) => {
+  try {
+    const { event_name, user_email, product_id, properties, session_id, device_type } = req.body;
+    
+    if (!event_name) {
+      return res.status(400).json({ error: 'event_name is required' });
+    }
+
+    const success = await trackEvent({
+      event_name,
+      user_email: user_email || null,
+      product_id: product_id || null,
+      properties: properties || {},
+      session_id: session_id || null,
+      device_type: device_type || null
+    });
+    
+    if (success) {
+      res.json({ message: 'Event tracked' });
+    } else {
+      res.status(500).json({ error: 'Failed to track event' });
+    }
+  } catch (error) {
+    console.error('Error tracking event:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/analytics/track-batch', async (req, res) => {
+  try {
+    const { events } = req.body;
+    
+    if (!events || !Array.isArray(events) || events.length === 0) {
+      return res.status(400).json({ error: 'events array is required' });
+    }
+
+    const success = await trackEvents(events);
+    
+    if (success) {
+      res.json({ message: `${events.length} events tracked` });
+    } else {
+      res.status(500).json({ error: 'Failed to track events' });
+    }
+  } catch (error) {
+    console.error('Error tracking events:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+function verifyAdminAccess(req: express.Request): boolean {
+  const adminKey = req.headers['x-admin-key'] as string;
+  const expectedAdminKey = process.env.ADMIN_API_KEY;
+  return !!(expectedAdminKey && adminKey === expectedAdminKey);
+}
+
+app.get('/api/analytics/dashboard', async (req, res) => {
+  try {
+    if (!verifyAdminAccess(req)) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const endDate = new Date().toISOString();
+    const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    const [dau, featureUsage, productViews, summary] = await Promise.all([
+      getDailyActiveUsers(startDate, endDate),
+      getFeatureUsage(startDate, endDate),
+      getProductViews(startDate, endDate),
+      getAnalyticsSummary(startDate, endDate)
+    ]);
+
+    res.json({
+      period: { start: startDate, end: endDate },
+      summary,
+      daily_active_users: dau,
+      feature_usage: featureUsage,
+      product_views: productViews
+    });
+  } catch (error) {
+    console.error('Error fetching dashboard:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/analytics/events', async (req, res) => {
+  try {
+    if (!verifyAdminAccess(req)) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const limit = parseInt(req.query.limit as string) || 50;
+    const events = await getRecentEvents(limit);
+
+    res.json({ events });
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/analytics/dau', async (req, res) => {
+  try {
+    if (!verifyAdminAccess(req)) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const days = parseInt(req.query.days as string) || 30;
+    const endDate = new Date().toISOString();
+    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+    const dau = await getDailyActiveUsers(startDate, endDate);
+
+    res.json({ daily_active_users: dau });
+  } catch (error) {
+    console.error('Error fetching DAU:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/analytics/features', async (req, res) => {
+  try {
+    if (!verifyAdminAccess(req)) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const days = parseInt(req.query.days as string) || 30;
+    const endDate = new Date().toISOString();
+    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+    const featureUsage = await getFeatureUsage(startDate, endDate);
+
+    res.json({ feature_usage: featureUsage });
+  } catch (error) {
+    console.error('Error fetching feature usage:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/analytics/products', async (req, res) => {
+  try {
+    if (!verifyAdminAccess(req)) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const days = parseInt(req.query.days as string) || 30;
+    const endDate = new Date().toISOString();
+    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+    const productViews = await getProductViews(startDate, endDate);
+
+    res.json({ product_views: productViews });
+  } catch (error) {
+    console.error('Error fetching product views:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

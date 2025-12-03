@@ -309,3 +309,267 @@ export async function deleteWeightEntry(email: string, entryId: number): Promise
 
   return true;
 }
+
+// =============================================
+// ANALYTICS INTERFACES
+// =============================================
+
+export interface AnalyticsEvent {
+  id?: number;
+  user_email: string | null;
+  event_name: string;
+  product_id: string | null;
+  properties: Record<string, any>;
+  session_id: string | null;
+  device_type: string | null;
+  created_at?: string;
+}
+
+export interface DailyActiveUsers {
+  date: string;
+  total_users: number;
+  new_users: number;
+  returning_users: number;
+}
+
+export interface FeatureUsage {
+  event_name: string;
+  event_count: number;
+  unique_users: number;
+  product_id?: string;
+}
+
+export interface ProductViews {
+  product_id: string;
+  view_count: number;
+  unique_users: number;
+  checkout_clicks: number;
+}
+
+// =============================================
+// ANALYTICS FUNCTIONS
+// =============================================
+
+export async function trackEvent(event: Omit<AnalyticsEvent, 'id' | 'created_at'>): Promise<boolean> {
+  if (!supabase) {
+    console.warn('Supabase not configured - cannot track event');
+    return false;
+  }
+
+  const { error } = await supabase
+    .from('analytics_events')
+    .insert({
+      user_email: event.user_email?.toLowerCase() || null,
+      event_name: event.event_name,
+      product_id: event.product_id,
+      properties: event.properties || {},
+      session_id: event.session_id,
+      device_type: event.device_type
+    });
+
+  if (error) {
+    console.error('Error tracking event:', error);
+    return false;
+  }
+
+  return true;
+}
+
+export async function trackEvents(events: Omit<AnalyticsEvent, 'id' | 'created_at'>[]): Promise<boolean> {
+  if (!supabase) {
+    console.warn('Supabase not configured - cannot track events');
+    return false;
+  }
+
+  const formattedEvents = events.map(event => ({
+    user_email: event.user_email?.toLowerCase() || null,
+    event_name: event.event_name,
+    product_id: event.product_id,
+    properties: event.properties || {},
+    session_id: event.session_id,
+    device_type: event.device_type
+  }));
+
+  const { error } = await supabase
+    .from('analytics_events')
+    .insert(formattedEvents);
+
+  if (error) {
+    console.error('Error tracking events:', error);
+    return false;
+  }
+
+  return true;
+}
+
+export async function getDailyActiveUsers(startDate: string, endDate: string): Promise<DailyActiveUsers[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase.rpc('get_daily_active_users', {
+    start_date: startDate,
+    end_date: endDate
+  });
+
+  if (error) {
+    console.error('Error getting DAU:', error);
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('analytics_events')
+      .select('user_email, created_at')
+      .gte('created_at', startDate)
+      .lte('created_at', endDate)
+      .not('user_email', 'is', null);
+
+    if (fallbackError || !fallbackData) return [];
+
+    const grouped: Record<string, Set<string>> = {};
+    fallbackData.forEach((row: any) => {
+      const date = row.created_at.split('T')[0];
+      if (!grouped[date]) grouped[date] = new Set();
+      grouped[date].add(row.user_email);
+    });
+
+    return Object.entries(grouped).map(([date, users]) => ({
+      date,
+      total_users: users.size,
+      new_users: 0,
+      returning_users: 0
+    })).sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  return data || [];
+}
+
+export async function getFeatureUsage(startDate: string, endDate: string): Promise<FeatureUsage[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('analytics_events')
+    .select('event_name, user_email, product_id')
+    .gte('created_at', startDate)
+    .lte('created_at', endDate);
+
+  if (error) {
+    console.error('Error getting feature usage:', error);
+    return [];
+  }
+
+  const grouped: Record<string, { count: number; users: Set<string> }> = {};
+  
+  (data || []).forEach((row: any) => {
+    const key = row.event_name;
+    if (!grouped[key]) {
+      grouped[key] = { count: 0, users: new Set() };
+    }
+    grouped[key].count++;
+    if (row.user_email) {
+      grouped[key].users.add(row.user_email);
+    }
+  });
+
+  return Object.entries(grouped).map(([event_name, stats]) => ({
+    event_name,
+    event_count: stats.count,
+    unique_users: stats.users.size
+  })).sort((a, b) => b.event_count - a.event_count);
+}
+
+export async function getProductViews(startDate: string, endDate: string): Promise<ProductViews[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('analytics_events')
+    .select('event_name, user_email, product_id')
+    .in('event_name', ['product_view', 'checkout_click'])
+    .gte('created_at', startDate)
+    .lte('created_at', endDate);
+
+  if (error) {
+    console.error('Error getting product views:', error);
+    return [];
+  }
+
+  const grouped: Record<string, { views: number; clicks: number; users: Set<string> }> = {};
+  
+  (data || []).forEach((row: any) => {
+    if (!row.product_id) return;
+    
+    if (!grouped[row.product_id]) {
+      grouped[row.product_id] = { views: 0, clicks: 0, users: new Set() };
+    }
+    
+    if (row.event_name === 'product_view') {
+      grouped[row.product_id].views++;
+    } else if (row.event_name === 'checkout_click') {
+      grouped[row.product_id].clicks++;
+    }
+    
+    if (row.user_email) {
+      grouped[row.product_id].users.add(row.user_email);
+    }
+  });
+
+  return Object.entries(grouped).map(([product_id, stats]) => ({
+    product_id,
+    view_count: stats.views,
+    unique_users: stats.users.size,
+    checkout_clicks: stats.clicks
+  })).sort((a, b) => b.view_count - a.view_count);
+}
+
+export async function getAnalyticsSummary(startDate: string, endDate: string) {
+  if (!supabase) {
+    return null;
+  }
+
+  const { data: totalEvents, error: eventsError } = await supabase
+    .from('analytics_events')
+    .select('id', { count: 'exact' })
+    .gte('created_at', startDate)
+    .lte('created_at', endDate);
+
+  const { data: uniqueUsersData, error: usersError } = await supabase
+    .from('analytics_events')
+    .select('user_email')
+    .gte('created_at', startDate)
+    .lte('created_at', endDate)
+    .not('user_email', 'is', null);
+
+  const { data: allTimeUsersData } = await supabase
+    .from('analytics_events')
+    .select('user_email')
+    .not('user_email', 'is', null);
+
+  const uniqueUsers = new Set((uniqueUsersData || []).map((r: any) => r.user_email)).size;
+  const allTimeUsers = new Set((allTimeUsersData || []).map((r: any) => r.user_email)).size;
+
+  return {
+    total_events: totalEvents?.length || 0,
+    unique_users_period: uniqueUsers,
+    all_time_users: allTimeUsers
+  };
+}
+
+export async function getRecentEvents(limit: number = 50): Promise<AnalyticsEvent[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('analytics_events')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('Error getting recent events:', error);
+    return [];
+  }
+
+  return data || [];
+}

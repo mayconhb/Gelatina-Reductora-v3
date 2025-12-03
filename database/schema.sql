@@ -86,3 +86,96 @@ COMMENT ON TABLE weight_entries IS 'Armazena os registros de peso dos usuários'
 COMMENT ON COLUMN weight_entries.user_email IS 'Email do usuário';
 COMMENT ON COLUMN weight_entries.weight IS 'Peso em kg';
 COMMENT ON COLUMN weight_entries.recorded_at IS 'Data/hora do registro';
+
+-- =============================================
+-- TABELAS DE ANALYTICS
+-- =============================================
+
+-- Tabela principal de eventos (append-only)
+CREATE TABLE IF NOT EXISTS analytics_events (
+  id BIGSERIAL PRIMARY KEY,
+  user_email VARCHAR(255),
+  event_name VARCHAR(100) NOT NULL,
+  product_id VARCHAR(50),
+  properties JSONB DEFAULT '{}',
+  session_id VARCHAR(100),
+  device_type VARCHAR(50),
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_analytics_events_user_email ON analytics_events(user_email);
+CREATE INDEX IF NOT EXISTS idx_analytics_events_event_name ON analytics_events(event_name);
+CREATE INDEX IF NOT EXISTS idx_analytics_events_product_id ON analytics_events(product_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_events_created_at ON analytics_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_analytics_events_session_id ON analytics_events(session_id);
+
+COMMENT ON TABLE analytics_events IS 'Eventos de uso do app para analytics';
+COMMENT ON COLUMN analytics_events.event_name IS 'Nome do evento: app_open, product_view, checkout_click, protocol_complete, weight_add, etc';
+COMMENT ON COLUMN analytics_events.properties IS 'Propriedades adicionais do evento em JSON';
+COMMENT ON COLUMN analytics_events.session_id IS 'ID da sessão do usuário';
+COMMENT ON COLUMN analytics_events.device_type IS 'Tipo de dispositivo: mobile, desktop, tablet';
+
+-- Tabela de usuários ativos diários (agregação)
+CREATE TABLE IF NOT EXISTS daily_active_users (
+  id BIGSERIAL PRIMARY KEY,
+  date DATE NOT NULL UNIQUE,
+  total_users INTEGER NOT NULL DEFAULT 0,
+  new_users INTEGER NOT NULL DEFAULT 0,
+  returning_users INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_daily_active_users_date ON daily_active_users(date);
+
+COMMENT ON TABLE daily_active_users IS 'Contagem de usuários ativos por dia';
+
+-- Tabela de uso de funcionalidades por dia
+CREATE TABLE IF NOT EXISTS feature_usage_daily (
+  id BIGSERIAL PRIMARY KEY,
+  date DATE NOT NULL,
+  event_name VARCHAR(100) NOT NULL,
+  product_id VARCHAR(50),
+  event_count INTEGER NOT NULL DEFAULT 0,
+  unique_users INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  UNIQUE(date, event_name, product_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_feature_usage_daily_date ON feature_usage_daily(date);
+CREATE INDEX IF NOT EXISTS idx_feature_usage_daily_event_name ON feature_usage_daily(event_name);
+
+COMMENT ON TABLE feature_usage_daily IS 'Uso de funcionalidades agregado por dia';
+
+-- Tabela de visualizações de produtos por dia
+CREATE TABLE IF NOT EXISTS product_views_daily (
+  id BIGSERIAL PRIMARY KEY,
+  date DATE NOT NULL,
+  product_id VARCHAR(50) NOT NULL,
+  view_count INTEGER NOT NULL DEFAULT 0,
+  unique_users INTEGER NOT NULL DEFAULT 0,
+  checkout_clicks INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  UNIQUE(date, product_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_product_views_daily_date ON product_views_daily(date);
+CREATE INDEX IF NOT EXISTS idx_product_views_daily_product_id ON product_views_daily(product_id);
+
+COMMENT ON TABLE product_views_daily IS 'Visualizações de produtos agregadas por dia';
+
+-- Tabela de sessões de usuários
+CREATE TABLE IF NOT EXISTS user_sessions (
+  id BIGSERIAL PRIMARY KEY,
+  user_email VARCHAR(255) NOT NULL,
+  session_id VARCHAR(100) NOT NULL,
+  started_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  last_activity_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  device_type VARCHAR(50),
+  is_first_session BOOLEAN DEFAULT FALSE
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_email ON user_sessions(user_email);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_session_id ON user_sessions(session_id);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_started_at ON user_sessions(started_at);
+
+COMMENT ON TABLE user_sessions IS 'Sessões de usuários para tracking de engagement';
