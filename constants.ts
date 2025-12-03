@@ -1,16 +1,16 @@
 import { Product } from './types';
 
-import protocoloDesinflamacionImg from '@assets/crie+uma+i (1)_1764195608015.png';
-import registroEvolucionImg from '@assets/Screenshot_82_1764195648912.png';
-import planAnticelulitisImg from '@assets/Fisioponto_tratamentos_Massagem_anticelulite_Bodyslim_1764195790548.png';
-import quemaGrasaDuermesImg from '@assets/Screenshot_83_1764195842878.png';
+import protocoloDesinflamacionImg from '@assets/crie+uma+i (1)_1764195608015.webp';
+import registroEvolucionImg from '@assets/Screenshot_82_1764195648912.webp';
+import planAnticelulitisImg from '@assets/Fisioponto_tratamentos_Massagem_anticelulite_Bodyslim_1764195790548.webp';
+import quemaGrasaDuermesImg from '@assets/Screenshot_83_1764195842878.webp';
 
 export const PRODUCTS: Product[] = [
   {
     id: 'p1',
     title: 'Gelatina Reductora',
     category: 'Receta',
-    image: '/gelatina-reductora.png',
+    image: '/gelatina-reductora.webp',
     isLocked: false,
     description: 'Una poderosa aliada para el adelgazamiento, rica en colágeno y propiedades diuréticas.',
     duration: 'PREP: 15min',
