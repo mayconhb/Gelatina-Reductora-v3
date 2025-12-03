@@ -19,7 +19,7 @@ import {
   getAnalyticsSummary,
   getRecentEvents
 } from './supabase';
-import { getAppProductId, getAllAppProductIds, getAllProductsInfo, getProductInfo } from './productMapping';
+import { getAppProductId, getAllAppProductIds, getProductInfo } from './productMapping';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -296,16 +296,6 @@ app.post('/api/hotmart/webhook', async (req, res) => {
 // =============================================
 // PRODUCTS INFO
 // =============================================
-
-app.get('/api/products/info', (req, res) => {
-  try {
-    const products = getAllProductsInfo();
-    res.json({ products });
-  } catch (error) {
-    console.error('Error fetching products info:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
 app.get('/api/products/:productId/info', (req, res) => {
   try {
