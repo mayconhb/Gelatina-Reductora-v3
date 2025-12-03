@@ -1,19 +1,40 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { addPurchase, updatePurchaseStatus, getSupabaseClient } from '../_lib/supabase';
-import { getAppProductId } from '../_lib/productMapping';
+import { createClient } from '@supabase/supabase-js';
+
+function getSupabaseClient() {
+  const supabaseUrl = process.env.SUPABASE_URL || '';
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || '';
+
+  if (supabaseUrl && supabaseServiceKey) {
+    return createClient(supabaseUrl, supabaseServiceKey);
+  }
+  
+  return null;
+}
+
+const PRODUCT_MAPPINGS = [
+  { hotmartProductId: "6694071", appProductId: "p1", name: "Gelatina Reductora" },
+  { hotmartProductId: "HOTMART_PRODUCT_2", appProductId: "p2", name: "Desinflamación de 7 días" },
+  { hotmartProductId: "HOTMART_PRODUCT_3", appProductId: "p3", name: "Registro de Evolución" },
+  { hotmartProductId: "HOTMART_PRODUCT_L1", appProductId: "l1", name: "Acelerador 14 Días" },
+  { hotmartProductId: "HOTMART_PRODUCT_L2", appProductId: "l2", name: "Quema-Grasa Mientras Duermes" }
+];
+
+function getAppProductId(hotmartProductId: string): string | null {
+  const mapping = PRODUCT_MAPPINGS.find(m => m.hotmartProductId === hotmartProductId);
+  return mapping ? mapping.appProductId : null;
+}
 
 function verifyHotmartToken(token: string): boolean {
   const HOTMART_WEBHOOK_TOKEN = process.env.HOTMART_WEBHOOK_SECRET || '';
   
   if (!HOTMART_WEBHOOK_TOKEN) {
-    console.warn('Warning: HOTMART_WEBHOOK_SECRET not configured. Webhook verification disabled.');
     return true;
   }
   
   return token === HOTMART_WEBHOOK_TOKEN;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-hotmart-hottok');
@@ -27,19 +48,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const token = req.headers['x-hotmart-hottok'] as string || '';
+    const token = req.headers['x-hotmart-hottok'] || '';
     
     if (!verifyHotmartToken(token)) {
-      console.error('Invalid Hotmart webhook token');
       return res.status(401).json({ error: 'Invalid token' });
     }
 
     const event = req.body;
-    
-    console.log('Hotmart webhook received:', JSON.stringify(event, null, 2));
 
     if (!event || !event.event) {
-      console.log('Test ping or empty payload received');
       return res.status(200).json({ message: 'Webhook endpoint is working' });
     }
 
@@ -48,61 +65,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const transactionId = event.data?.purchase?.transaction;
 
     if (!buyerEmail || !hotmartProductId || !transactionId) {
-      console.log('Missing fields - this might be a test webhook');
       return res.status(200).json({ message: 'Webhook received (test or incomplete data)' });
     }
 
     const supabase = getSupabaseClient();
     if (!supabase) {
-      console.error('Supabase not configured - SUPABASE_URL and SUPABASE_SERVICE_KEY are required');
       return res.status(200).json({ 
         message: 'Webhook received but database not configured',
-        warning: 'Configure SUPABASE_URL and SUPABASE_SERVICE_KEY environment variables'
+        warning: 'Configure SUPABASE_URL and SUPABASE_SERVICE_KEY'
       });
     }
 
     const appProductId = getAppProductId(hotmartProductId);
     
     if (!appProductId) {
-      console.warn(`Unknown Hotmart product ID: ${hotmartProductId}`);
       return res.status(200).json({ message: 'Product not mapped, ignoring' });
     }
 
-    switch (event.event) {
-      case 'PURCHASE_APPROVED':
-      case 'PURCHASE_COMPLETE':
-        await addPurchase({
-          user_email: buyerEmail,
-          product_id: appProductId,
-          hotmart_product_id: hotmartProductId,
-          hotmart_transaction_id: transactionId,
-          status: 'active',
-          purchased_at: new Date().toISOString()
-        });
-        console.log(`Purchase recorded for ${buyerEmail} - Product: ${appProductId}`);
-        break;
-
-      case 'PURCHASE_REFUNDED':
-        await updatePurchaseStatus(transactionId, 'refunded');
-        console.log(`Refund processed for transaction: ${transactionId}`);
-        break;
-
-      case 'PURCHASE_CANCELED':
-      case 'PURCHASE_CHARGEBACK':
-        await updatePurchaseStatus(transactionId, 'cancelled');
-        console.log(`Cancellation processed for transaction: ${transactionId}`);
-        break;
-
-      default:
-        console.log(`Unhandled event type: ${event.event}`);
+    if (event.event === 'PURCHASE_APPROVED' || event.event === 'PURCHASE_COMPLETE') {
+      await supabase.from('purchases').upsert({
+        user_email: buyerEmail.toLowerCase(),
+        product_id: appProductId,
+        hotmart_product_id: hotmartProductId,
+        hotmart_transaction_id: transactionId,
+        status: 'active',
+        purchased_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'hotmart_transaction_id' });
+    } else if (event.event === 'PURCHASE_REFUNDED') {
+      await supabase.from('purchases')
+        .update({ status: 'refunded', updated_at: new Date().toISOString() })
+        .eq('hotmart_transaction_id', transactionId);
+    } else if (event.event === 'PURCHASE_CANCELED' || event.event === 'PURCHASE_CHARGEBACK') {
+      await supabase.from('purchases')
+        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .eq('hotmart_transaction_id', transactionId);
     }
 
-    res.status(200).json({ message: 'Webhook processed successfully' });
-  } catch (error) {
-    console.error('Error processing Hotmart webhook:', error);
-    res.status(200).json({ 
+    return res.status(200).json({ message: 'Webhook processed successfully' });
+  } catch (error: any) {
+    return res.status(200).json({ 
       message: 'Webhook received with error',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error?.message || 'Unknown error'
     });
   }
 }
