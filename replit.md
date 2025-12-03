@@ -21,6 +21,12 @@ The application is structured as a React PWA with a separate Express.js backend.
     -   Analytics Dashboard (admin-only) to track user engagement, product views, and feature usage.
     -   Daily motivational quotes.
     -   Cloud-based storage for user profiles, protocol progress, and weight tracking data using Supabase.
+    -   Optimized image loading with `OptimizedImage` component featuring:
+        -   In-memory image cache to prevent re-fetching
+        -   Skeleton placeholder with gradient animation while loading
+        -   Smooth fade-in transition when images are ready
+        -   Priority loading for first visible items in carousels
+        -   Preload of adjacent images for seamless carousel navigation
 
 **Backend (Express.js):**
 -   Handles API requests for user data, product information, and Hotmart webhook processing.

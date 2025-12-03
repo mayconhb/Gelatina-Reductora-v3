@@ -1,8 +1,9 @@
-import React, { useState, useRef, MouseEvent, useMemo } from 'react';
+import React, { useState, useRef, MouseEvent, useMemo, useEffect } from 'react';
 import { Lock, ChevronRight, Loader2, User } from 'lucide-react';
 import { PRODUCTS, BONUSES, LOCKED_CONTENT, MOTIVATIONAL_QUOTES } from '../constants';
 import { Product } from '../types';
 import { useUserProducts } from '../lib/useUserProducts';
+import { OptimizedImage, preloadImages } from './OptimizedImage';
 
 import bannerTransformacao from '@assets/generated_images/weight_loss_transformation_banner.webp';
 import bannerEmagrecimento from '@assets/generated_images/mirror_reflection_weight_loss.webp';
@@ -85,10 +86,20 @@ export const HomeView: React.FC<HomeViewProps> = ({ onProductClick, onShowUpgrad
     return allPurchasableProducts.filter(p => !purchasedProducts.includes(p.id));
   }, [allPurchasableProducts, purchasedProducts]);
 
-  const banners = [
+  const banners = useMemo(() => [
     { id: 1, image: bannerTransformacao, title: "Transforma tu vida\nhoy mismo." },
     { id: 2, image: bannerEmagrecimento, title: "Tu cuerpo merece\nlo mejor." }
-  ];
+  ], []);
+
+  useEffect(() => {
+    const bannerUrls = banners.map(b => b.image);
+    preloadImages(bannerUrls);
+
+    const productUrls = [...myProducts, ...BONUSES, ...exclusiveContent]
+      .slice(0, 12)
+      .map(p => p.image);
+    preloadImages(productUrls);
+  }, [banners, myProducts, exclusiveContent]);
 
   const handleBannerScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const scrollLeft = e.currentTarget.scrollLeft;
@@ -151,11 +162,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ onProductClick, onShowUpgrad
           >
             {banners.map((banner, index) => (
               <div key={banner.id} className="snap-center shrink-0 w-full sm:w-[350px] relative rounded-3xl overflow-hidden aspect-[16/9] shadow-md select-none pointer-events-none sm:pointer-events-auto">
-                <img 
+                <OptimizedImage 
                   src={banner.image} 
                   alt="Banner" 
-                  loading="lazy"
-                  decoding="async"
+                  priority={index < 2}
+                  preloadSiblings={banners.filter((_, i) => i !== index).map(b => b.image)}
                   className="w-full h-full object-cover pointer-events-none"
                 />
                 <div className="absolute inset-0 bg-black/30 flex items-end p-6">
@@ -190,14 +201,20 @@ export const HomeView: React.FC<HomeViewProps> = ({ onProductClick, onShowUpgrad
               {...productsScroll.events}
               className={`flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-6 gap-4 pb-4 ${productsScroll.isDragging ? 'cursor-grabbing snap-none' : 'cursor-grab'}`}
             >
-              {myProducts.map((product) => (
+              {myProducts.map((product, index) => (
                 <div 
                   key={product.id}
                   onClick={() => handleProductClickInternal(product, productsScroll.hasMoved)}
                   className="snap-center shrink-0 w-40 flex flex-col gap-2 group cursor-pointer select-none"
                 >
                   <div className="aspect-square rounded-2xl overflow-hidden relative shadow-sm bg-white/60 backdrop-blur-sm">
-                    <img src={product.image} alt={product.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-active:scale-105 transition-transform duration-300 pointer-events-none" />
+                    <OptimizedImage 
+                      src={product.image} 
+                      alt={product.title} 
+                      priority={index < 4}
+                      preloadSiblings={myProducts.slice(index + 1, index + 3).map(p => p.image)}
+                      className="w-full h-full object-cover group-active:scale-105 transition-transform duration-300 pointer-events-none" 
+                    />
                   </div>
                   <div>
                     <h4 className="font-semibold text-slate-800 text-sm leading-tight">{product.title}</h4>
@@ -227,14 +244,20 @@ export const HomeView: React.FC<HomeViewProps> = ({ onProductClick, onShowUpgrad
             {...bonusScroll.events}
             className={`flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-6 gap-4 pb-4 ${bonusScroll.isDragging ? 'cursor-grabbing snap-none' : 'cursor-grab'}`}
           >
-            {BONUSES.map((product) => (
+            {BONUSES.map((product, index) => (
               <div 
                 key={product.id}
                 onClick={() => handleProductClickInternal(product, bonusScroll.hasMoved)}
                 className="snap-center shrink-0 w-40 flex flex-col gap-2 group cursor-pointer select-none"
               >
                 <div className="aspect-square rounded-2xl overflow-hidden relative shadow-sm bg-white/60 backdrop-blur-sm">
-                  <img src={product.image} alt={product.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-active:scale-105 transition-transform duration-300 pointer-events-none" />
+                  <OptimizedImage 
+                    src={product.image} 
+                    alt={product.title} 
+                    priority={index < 4}
+                    preloadSiblings={BONUSES.slice(index + 1, index + 3).map(p => p.image)}
+                    className="w-full h-full object-cover group-active:scale-105 transition-transform duration-300 pointer-events-none" 
+                  />
                 </div>
                 <div>
                   <h4 className="font-semibold text-slate-800 text-sm leading-tight">{product.title}</h4>
@@ -258,14 +281,20 @@ export const HomeView: React.FC<HomeViewProps> = ({ onProductClick, onShowUpgrad
               {...lockedScroll.events}
               className={`flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-6 gap-4 pb-4 ${lockedScroll.isDragging ? 'cursor-grabbing snap-none' : 'cursor-grab'}`}
             >
-              {exclusiveContent.map((product) => (
+              {exclusiveContent.map((product, index) => (
                 <div 
                   key={product.id}
                   onClick={() => handleLockedClickInternal(product, lockedScroll.hasMoved)}
                   className="snap-center shrink-0 w-40 flex flex-col gap-2 group cursor-pointer relative select-none"
                 >
                   <div className="aspect-square rounded-2xl overflow-hidden relative shadow-sm bg-slate-200">
-                    <img src={product.image} alt={product.title} loading="lazy" decoding="async" className="w-full h-full object-cover opacity-60 blur-[1px] pointer-events-none" />
+                    <OptimizedImage 
+                      src={product.image} 
+                      alt={product.title} 
+                      priority={index < 4}
+                      preloadSiblings={exclusiveContent.slice(index + 1, index + 3).map(p => p.image)}
+                      className="w-full h-full object-cover opacity-60 blur-[1px] pointer-events-none" 
+                    />
                     <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
                       <div className="bg-white/90 p-3 rounded-full shadow-md">
                         <Lock size={20} className="text-slate-900" />
