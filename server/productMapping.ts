@@ -1,6 +1,6 @@
+export type { ProductMapping } from '../shared/products';
 export { 
   PRODUCT_MAPPINGS,
-  ProductMapping,
   getAppProductId,
   getHotmartProductId,
   getOfferCode,

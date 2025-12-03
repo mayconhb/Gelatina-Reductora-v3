@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { getAppProductId } from '../../shared/products';
 
 function getSupabaseClient() {
   const supabaseUrl = process.env.SUPABASE_URL || '';
@@ -9,19 +10,6 @@ function getSupabaseClient() {
   }
   
   return null;
-}
-
-const PRODUCT_MAPPINGS = [
-  { hotmartProductId: "6694071", appProductId: "p1", name: "Gelatina Reductora" },
-  { hotmartProductId: "HOTMART_PRODUCT_2", appProductId: "p2", name: "Desinflamación de 7 días" },
-  { hotmartProductId: "HOTMART_PRODUCT_3", appProductId: "p3", name: "Registro de Evolución" },
-  { hotmartProductId: "HOTMART_PRODUCT_L1", appProductId: "l1", name: "Acelerador 14 Días" },
-  { hotmartProductId: "HOTMART_PRODUCT_L2", appProductId: "l2", name: "Quema-Grasa Mientras Duermes" }
-];
-
-function getAppProductId(hotmartProductId: string): string | null {
-  const mapping = PRODUCT_MAPPINGS.find(m => m.hotmartProductId === hotmartProductId);
-  return mapping ? mapping.appProductId : null;
 }
 
 function verifyHotmartToken(token: string): boolean {

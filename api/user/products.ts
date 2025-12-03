@@ -1,12 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-
-const PRODUCT_MAPPINGS = [
-  { appProductId: "p1" },
-  { appProductId: "p2" },
-  { appProductId: "p3" },
-  { appProductId: "l1" },
-  { appProductId: "l2" }
-];
+import { getAllAppProductIds } from '../../shared/products';
 
 function getSupabaseClient() {
   const supabaseUrl = process.env.SUPABASE_URL || '';
@@ -52,7 +45,7 @@ export default async function handler(req: any, res: any) {
       purchasedProductIds = (data || []).map((p: any) => p.product_id);
     }
 
-    const allProductIds = PRODUCT_MAPPINGS.map(m => m.appProductId);
+    const allProductIds = getAllAppProductIds();
     const lockedProductIds = allProductIds.filter(id => !purchasedProductIds.includes(id));
 
     res.json({

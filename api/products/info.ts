@@ -1,35 +1,4 @@
-const PRODUCT_MAPPINGS = [
-  {
-    name: "Gelatina Reductora",
-    appProductId: "p1",
-    hotmartProductId: "6694071",
-    offerCode: "8pqi3d4c"
-  },
-  {
-    name: "Desinflamación de 7 días",
-    appProductId: "p2",
-    hotmartProductId: "HOTMART_PRODUCT_2",
-    offerCode: ""
-  },
-  {
-    name: "Registro de Evolución",
-    appProductId: "p3",
-    hotmartProductId: "HOTMART_PRODUCT_3",
-    offerCode: ""
-  },
-  {
-    name: "Acelerador 14 Días",
-    appProductId: "l1",
-    hotmartProductId: "HOTMART_PRODUCT_L1",
-    offerCode: ""
-  },
-  {
-    name: "Quema-Grasa Mientras Duermes",
-    appProductId: "l2",
-    hotmartProductId: "HOTMART_PRODUCT_L2",
-    offerCode: ""
-  }
-];
+import { getAllProductsInfo } from '../../shared/products';
 
 export default function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -45,7 +14,7 @@ export default function handler(req: any, res: any) {
   }
 
   try {
-    res.json({ products: PRODUCT_MAPPINGS });
+    res.json({ products: getAllProductsInfo() });
   } catch (error: any) {
     console.error('Error fetching products info:', error);
     res.status(500).json({ error: error?.message || 'Internal server error' });
