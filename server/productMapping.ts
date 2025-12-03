@@ -1,4 +1,4 @@
-export type { ProductMapping } from '../shared/products';
+export type { ProductMapping } from '../api/lib/products';
 export { 
   PRODUCT_MAPPINGS,
   getAppProductId,
@@ -7,4 +7,4 @@ export {
   getAllAppProductIds,
   getProductInfo,
   getAllProductsInfo
-} from '../shared/products';
+} from '../api/lib/products';
