@@ -33,8 +33,8 @@ The application is structured as a React PWA with a separate Express.js backend.
 -   Provides endpoints for health checks, user product queries, Hotmart webhooks, and manual purchase additions.
 -   Manages analytics data collection and serves dashboard information.
 
-**Shared Logic:**
--   `shared/products.ts` acts as the single source of truth for all product data, including Hotmart product IDs and offer codes, used by both frontend and backend.
+**Product Data:**
+-   `api/lib/products.ts` is the single source of truth for all product data, including Hotmart product IDs and offer codes. When adding or modifying products, update only this file. Both the local server and Vercel serverless functions use this file.
 
 **Deployment:**
 -   Optimized for Vercel deployment using serverless functions for the API (`/api` folder structure).
