@@ -4,8 +4,8 @@ import { PRODUCTS, BONUSES, LOCKED_CONTENT, MOTIVATIONAL_QUOTES } from '../const
 import { Product } from '../types';
 import { useUserProducts } from '../lib/useUserProducts';
 
-import bannerTransformacao from '@assets/generated_images/weight_loss_transformation_banner.png';
-import bannerEmagrecimento from '@assets/generated_images/mirror_reflection_weight_loss.png';
+import bannerTransformacao from '@assets/generated_images/weight_loss_transformation_banner.webp';
+import bannerEmagrecimento from '@assets/generated_images/mirror_reflection_weight_loss.webp';
 
 interface HomeViewProps {
   onProductClick: (product: Product) => void;
@@ -138,6 +138,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ onProductClick, onShowUpgrad
                 <img 
                   src={banner.image} 
                   alt="Banner" 
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover pointer-events-none"
                 />
                 <div className="absolute inset-0 bg-black/30 flex items-end p-6">
@@ -179,7 +181,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onProductClick, onShowUpgrad
                   className="snap-center shrink-0 w-40 flex flex-col gap-2 group cursor-pointer select-none"
                 >
                   <div className="aspect-square rounded-2xl overflow-hidden relative shadow-sm bg-white/60 backdrop-blur-sm">
-                    <img src={product.image} alt={product.title} className="w-full h-full object-cover group-active:scale-105 transition-transform duration-300 pointer-events-none" />
+                    <img src={product.image} alt={product.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-active:scale-105 transition-transform duration-300 pointer-events-none" />
                   </div>
                   <div>
                     <h4 className="font-semibold text-slate-800 text-sm leading-tight">{product.title}</h4>
@@ -216,7 +218,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onProductClick, onShowUpgrad
                 className="snap-center shrink-0 w-40 flex flex-col gap-2 group cursor-pointer select-none"
               >
                 <div className="aspect-square rounded-2xl overflow-hidden relative shadow-sm bg-white/60 backdrop-blur-sm">
-                  <img src={product.image} alt={product.title} className="w-full h-full object-cover group-active:scale-105 transition-transform duration-300 pointer-events-none" />
+                  <img src={product.image} alt={product.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-active:scale-105 transition-transform duration-300 pointer-events-none" />
                 </div>
                 <div>
                   <h4 className="font-semibold text-slate-800 text-sm leading-tight">{product.title}</h4>
@@ -247,7 +249,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onProductClick, onShowUpgrad
                   className="snap-center shrink-0 w-40 flex flex-col gap-2 group cursor-pointer relative select-none"
                 >
                   <div className="aspect-square rounded-2xl overflow-hidden relative shadow-sm bg-slate-200">
-                    <img src={product.image} alt={product.title} className="w-full h-full object-cover opacity-60 blur-[1px] pointer-events-none" />
+                    <img src={product.image} alt={product.title} loading="lazy" decoding="async" className="w-full h-full object-cover opacity-60 blur-[1px] pointer-events-none" />
                     <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
                       <div className="bg-white/90 p-3 rounded-full shadow-md">
                         <Lock size={20} className="text-slate-900" />

@@ -276,6 +276,8 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product, o
         <img 
             src={product.image} 
             alt={product.title} 
+            loading="eager"
+            decoding="async"
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
         />
         {/* Dark Overlay for Text Contrast */}
