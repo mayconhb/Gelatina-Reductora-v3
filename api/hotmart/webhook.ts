@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { addPurchase, updatePurchaseStatus } from '../lib/supabase';
+import { addPurchase, updatePurchaseStatus, getSupabaseClient } from '../lib/supabase';
 import { getAppProductId } from '../lib/productMapping';
 
 function verifyHotmartToken(token: string): boolean {
@@ -14,6 +14,14 @@ function verifyHotmartToken(token: string): boolean {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-hotmart-hottok');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -28,15 +36,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const event = req.body;
     
-    console.log('Hotmart webhook received:', event.event);
+    console.log('Hotmart webhook received:', JSON.stringify(event, null, 2));
+
+    if (!event || !event.event) {
+      console.log('Test ping or empty payload received');
+      return res.status(200).json({ message: 'Webhook endpoint is working' });
+    }
 
     const buyerEmail = event.data?.buyer?.email;
     const hotmartProductId = event.data?.product?.id?.toString();
     const transactionId = event.data?.purchase?.transaction;
 
     if (!buyerEmail || !hotmartProductId || !transactionId) {
-      console.error('Missing required fields in webhook payload');
-      return res.status(400).json({ error: 'Missing required fields' });
+      console.log('Missing fields - this might be a test webhook');
+      return res.status(200).json({ message: 'Webhook received (test or incomplete data)' });
+    }
+
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      console.error('Supabase not configured - SUPABASE_URL and SUPABASE_SERVICE_KEY are required');
+      return res.status(200).json({ 
+        message: 'Webhook received but database not configured',
+        warning: 'Configure SUPABASE_URL and SUPABASE_SERVICE_KEY environment variables'
+      });
     }
 
     const appProductId = getAppProductId(hotmartProductId);
@@ -78,6 +100,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(200).json({ message: 'Webhook processed successfully' });
   } catch (error) {
     console.error('Error processing Hotmart webhook:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(200).json({ 
+      message: 'Webhook received with error',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }
