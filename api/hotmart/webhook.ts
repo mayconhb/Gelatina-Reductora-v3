@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { getAppProductId } from '../_shared/products';
+import { getAppProductId } from '../lib/products';
 
 function getSupabaseClient() {
   const supabaseUrl = process.env.SUPABASE_URL || '';
