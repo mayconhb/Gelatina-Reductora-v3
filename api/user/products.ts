@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { getAllAppProductIds } from '../lib/products';
+import { getAllAppProductIds } from '../lib/products.js';
 
 const ADMIN_EMAIL = 'maycon.henriquebezerra@gmail.com';
 
